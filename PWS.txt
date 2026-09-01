@@ -1,0 +1,9 @@
+Username: i.nyoman52
+Password: DYNf0dXT-LkjjF_zf4-t08fkLMVmT30t
+
+Project Command
+You will need to use this command to deploy your code. If you have done this, in the future you will need to just use the third line only.
+
+git remote add pws https://pws.cs.ui.ac.id/i.nyoman52/myportofolio
+git branch -M master
+git push pws master

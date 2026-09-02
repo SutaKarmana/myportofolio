@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 <body>
     <header class="site-header">
@@ -15,6 +16,7 @@
             <a href="#profile" class="brand">Suta</a>
             <nav>
                 <a href="#profile">Profile</a>
+                <a href="#experience">Experience</a>
             </nav>
         </div>
     </header>
@@ -50,6 +52,41 @@
                 </div>
             </div>
         </section>
+        <section class="hero">
+            <div class="container">
+                <div class="section-heading">
+                    <h2>Education</h2>
+                </div>
+            </div>
+        </section>
+        <section class="section-add">
+            <div class="container">
+                <div class="section-heading">
+                    <h2>Experience</h2>
+                </div>
+                <div class="experience-list">
+                    <article class="experience-item">
+                        <div class="experience-period">July 2026 &mdash; Present</div>
+                        <div class="experience-content">
+                            <div class="experience-title">
+                                <h3>Teaching Assistant of Programming Foundations 1 </h3>
+                                <p>Faculty of Computer Science Universitas Indonesia</p>
+                            </div>
+                            <ul>
+                                <li>lorem ipsum dolor sit amet.</li>
+                            </ul>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+        <!-- <section class="hero" id="profile">
+            <div class="container hero-grid" >
+                <div>
+                    <h1> Coba Animasi</h1>
+                </div>
+            </div>
+        </section> -->
     </main>
 
     <footer class="site-footer">
@@ -58,4 +95,8 @@
         </div>
     </footer>
 </body>
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>
+    AOS.init();
+</script>
 </html>

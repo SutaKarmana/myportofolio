@@ -6,29 +6,28 @@
     <title>Suta Karmana - Portfolio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Font dan animasi digunakan untuk menjaga tampilan tetap konsisten. -->
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 <body>
+    <!-- Navigasi utama untuk berpindah antarbagian portfolio. -->
     <header class="site-header">
         <div class="container">
             <a href="#profile" class="brand">Suta</a>
-            <nav>
-                <div class="divAnimation">
-                    <a href="#profile">Profile</a>
-                </div>
-                <div class="divAnimation">
-                    <a href="#experience">Experience</a>
-                </div>
-                <div class="divAnimation">
-                    <a href="#awards">Awards</a>
-                </div>
+            <nav aria-label="Main navigation">
+                <ul>
+                    <li><a href="#profile">Profile</a></li>
+                    <li><a href="#experience">Experience</a></li>
+                    <li><a href="#awards">Awards</a></li>
+                </ul>
             </nav>
         </div>
     </header>
 
     <main>
+        <!-- Bagian pembuka berisi identitas, foto, dan informasi singkat. -->
         <section class="hero" id="profile">
             <div class="container hero-grid">
                 <div class="hero-identity">
@@ -37,7 +36,7 @@
                 </div>
                 <div class="hero-photo">
                     <div class="photo-block"></div>
-                    <img class="avatar" src="/static/img/profile.jpeg" alt="Photo of Burhan">
+                    <img class="avatar" src="/static/img/profile.jpeg" alt="Photo of Suta Karmana">
                 </div>
                 <div class="hero-details">
                     <p class="bio">An Information Systems student with a strong interest in Data Analytics, currently developing skills in Software Development and Business Development. Enthusiastic about Business Plan Competitions and Data Mining Competition.</p>
@@ -51,6 +50,7 @@
                             <dd>S1 Sistem Informasi</dd>
                         </div>
                     </dl>
+                    <!-- Tautan kontak untuk mengakses profil profesional. -->
                     <div class="social-links">
                         <a href="https://github.com/SutaKarmana" class="social-link">GitHub</a>
                         <a href="https://www.linkedin.com/in/yadnyasuta/" class="social-link">LinkedIn</a>
@@ -59,14 +59,16 @@
                 </div>
             </div>
         </section>
-        <section class="section-add" id ="experience">
+        <!-- Pengalaman disusun sebagai artikel agar tiap item berdiri sendiri. -->
+        <section class="section" id="experience">
             <div class="container">
                 <div class="section-heading">
                     <h2>Experience</h2>
                 </div>
                 <div class="experience-list">
-                    <div class="experience-item" data-aos="fade-up">
-                        <div class="experience-period">July 2026 &mdash; Present</div>
+                    <!-- Setiap artikel mewakili satu pengalaman organisasi atau pekerjaan. -->
+                    <article class="experience-item" data-aos="fade-up">
+                        <time class="experience-period" datetime="2026-07">July 2026 &mdash; Present</time>
                         <div class="experience-content">
                             <div class="experience-title">
                                 <h3>Teaching Assistant of Programming Foundations 1 </h3>
@@ -78,9 +80,9 @@
                             </ul>
                         </div>
                         <img class="organization-logo" src="/static/img/logoUI.jpg" alt="Universitas Indonesia image">
-                    </div>
-                    <div class="experience-item" data-aos="fade-up" data-aos-delay="100">
-                        <div class="experience-period">April 2026 &mdash; Present</div>
+                    </article>
+                    <article class="experience-item" data-aos="fade-up" data-aos-delay="100">
+                        <time class="experience-period" datetime="2026-04">April 2026 &mdash; Present</time>
                         <div class="experience-content">
                             <div class="experience-title">
                                 <h3>Staff of Data Analytics Dash Competition</h3>
@@ -93,9 +95,9 @@
                             </ul>
                         </div>
                         <img class="organization-logo" src="/static/img/logoCompfest.jpg" alt="COMPFEST 18 image">
-                    </div>
-                    <div class="experience-item" data-aos="fade-up" data-aos-delay="200">
-                        <div class="experience-period">March 2026 &mdash; Present</div>
+                    </article>
+                    <article class="experience-item" data-aos="fade-up" data-aos-delay="200">
+                        <time class="experience-period" datetime="2026-03">March 2026 &mdash; Present</time>
                         <div class="experience-content">
                             <div class="experience-title">
                                 <h3>Arts & Sports Staff</h3>
@@ -107,9 +109,9 @@
                             </ul>
                         </div>
                         <img class="organization-logo" src="/static/img/logoKMHD.jpg" alt="KMHD image">
-                    </div>
-                    <div class="experience-item" data-aos="fade-up" data-aos-delay="300">
-                        <div class="experience-period">January 2026 &mdash; Present</div>
+                    </article>
+                    <article class="experience-item" data-aos="fade-up" data-aos-delay="300">
+                        <time class="experience-period" datetime="2026-01">January 2026 &mdash; Present</time>
                         <div class="experience-content">
                             <div class="experience-title">
                                 <h3>Member</h3>
@@ -120,9 +122,9 @@
                             </ul>
                         </div>
                         <img class="organization-logo" src="/static/img/gdgc_ui_logo.jpg" alt="GDGoC image">
-                    </div>
-                    <div class="experience-item" data-aos="fade-up" data-aos-delay="300">
-                        <div class="experience-period">January 2026 &mdash; July 2026</div>
+                    </article>
+                    <article class="experience-item" data-aos="fade-up" data-aos-delay="300">
+                        <time class="experience-period" datetime="2026-01">January 2026 &mdash; July 2026</time>
                         <div class="experience-content">
                             <div class="experience-title">
                                 <h3>Academic & Teaching Assistant</h3>
@@ -135,17 +137,19 @@
                             </ul>
                         </div>
                         <img class="organization-logo" src="/static/img/logoBETIS.jpg" alt="BETIS image">
-                    </div>
+                    </article>
                 </div>
             </div>
         </section>
-        <section class="hero" id="awards">
+        <!-- Setiap kartu menampilkan ringkasan penghargaan dan sertifikatnya. -->
+        <section class="section" id="awards">
             <div class="container">
                 <div class="section-heading">
                     <h2>Awards</h2>
                 </div>
                 <div class="awards-grid">
-                    <div class="award-card" data-aos="fade-up">
+                    <!-- Pratinjau sertifikat menjadi tautan langsung ke dokumen PDF. -->
+                    <article class="award-card" data-aos="fade-up">
                         <a class="award-preview" href="/static/pdfPrestasi/YaudahlahYa.pdf" target="_blank" rel="noopener">
                             <img src="/static/img/BrainChallenge.jpg" alt="Preview of award certificate">
                             <span class="award-file-label">Open PDF</span>
@@ -156,8 +160,8 @@
                             <p class="award-issuer">Brain Challenge Universitas Telkom  </p>
                             <a class="award-link" href="/static/pdfPrestasi/YaudahlahYa.pdf" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
                         </div>
-                    </div>
-                    <div class="award-card" data-aos="fade-up">
+                    </article>
+                    <article class="award-card" data-aos="fade-up">
                         <a class="award-preview" href="/static/pdfPrestasi/FinalisFind_It_pdf.pdf" target="_blank" rel="noopener">
                             <img src="/static/img/FinalisFindIT.png" alt="Preview of award certificate">
                             <span class="award-file-label">Open PDF</span>
@@ -168,8 +172,8 @@
                             <p class="award-issuer">FindIT Universitas Gadjah Mada  </p>
                             <a class="award-link" href="/static/pdfPrestasi/FinalisFind_It_pdf.pdf" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
                         </div>
-                    </div>
-                    <div class="award-card" data-aos="fade-up">
+                    </article>
+                    <article class="award-card" data-aos="fade-up">
                         <a class="award-preview" href="/static/pdfPrestasi/WebDesign.pdf" target="_blank" rel="noopener">
                             <img src="/static/img/INVOFEST_Website.jpg" alt="Preview of award certificate">
                             <span class="award-file-label">Open PDF</span>
@@ -180,8 +184,8 @@
                             <p class="award-issuer">INVOFEST Politeknik Harapan Bersama</p>
                             <a class="award-link" href="/static/pdfPrestasi/WebDesign.pdf" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
                         </div>
-                    </div>
-                    <div class="award-card" data-aos="fade-up">
+                    </article>
+                    <article class="award-card" data-aos="fade-up">
                         <a class="award-preview" href="/static/pdfPrestasi/Programming.pdf" target="_blank" rel="noopener">
                             <img src="/static/img/PNBT_IT.jpg" alt="Preview of award certificate">
                             <span class="award-file-label">Open PDF</span>
@@ -192,8 +196,8 @@
                             <p class="award-issuer">PNBIT Politeknik Negeri Bali</p>
                             <a class="award-link" href="/static/pdfPrestasi/Programming.pdf" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
                         </div>
-                    </div>
-                    <div class="award-card" data-aos="fade-up">
+                    </article>
+                    <article class="award-card" data-aos="fade-up">
                         <a class="award-preview" href="/static/pdfPrestasi/BoT_Suta.pdf" target="_blank" rel="noopener">
                             <img src="/static/img/BoT_Pingfest.jpg" alt="Preview of award certificate">
                             <span class="award-file-label">Open PDF</span>
@@ -204,8 +208,8 @@
                             <p class="award-issuer">PINGFEST Universitas Sebelas Maret</p>
                             <a class="award-link" href="/static/pdfPrestasi/BoT_Suta.pdf" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
                         </div>
-                    </div>
-                    <div class="award-card" data-aos="fade-up">
+                    </article>
+                    <article class="award-card" data-aos="fade-up">
                         <a class="award-preview" href="/static/pdfPrestasi/Anforcom.pdf" target="_blank" rel="noopener">
                             <img src="/static/img/Anforcom_Piagam.jpg" alt="Preview of award certificate">
                             <span class="award-file-label">Open PDF</span>
@@ -216,17 +220,10 @@
                             <p class="award-issuer">ANFORCOM Universitas Diponegoro</p>
                             <a class="award-link" href="/static/pdfPrestasi/Anforcom.pdf" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
                         </div>
-                    </div>
+                    </article>
                 </div>
             </div>
         </section>
-        <!-- <section class="hero" id="profile">
-            <div class="container hero-grid" >
-                <div>
-                    <h1> Coba Animasi</h1>
-                </div>
-            </div>
-        </section> -->
     </main>
 
     <footer class="site-footer">
@@ -234,9 +231,10 @@
             <p>&copy; 2026 Suta. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>
     </footer>
+    <!-- AOS memberi animasi ringan saat konten muncul di layar. -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
 </body>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-<script>
-    AOS.init();
-</script>
 </html>

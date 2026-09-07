@@ -28,19 +28,22 @@
     text-decoration: none;
 }
 
-.site-header nav {
+.site-header nav ul {
     display: flex;
     gap: 2rem;
+    list-style: none;
 }
 .site-header nav a {
     color: var(--ink);
     text-decoration: none;
     font-size: 0.95rem;
-}
-.divAnimation a:hover {
-    color: var(--accent);
     transition: color 0.3s ease;
 }
+.site-header nav a:hover,
+.site-header nav a:focus-visible {
+    color: var(--accent);
+}
+/* Variabel warna menjaga tampilan tetap konsisten dan mudah diubah. */
 :root {
     --ink: #1c1917;
     --paper: #faf6f0;
@@ -72,6 +75,7 @@ h1, .brand {
     padding: 4.5rem 0 5rem;
 }
 
+/* Grid utama mengatur posisi identitas, foto, dan detail profil. */
 .hero-grid {
     display: grid;
     grid-template-columns: 1.3fr 1fr;
@@ -150,6 +154,13 @@ h1, .brand {
     background-color: var(--accent);
 }
 
+.social-link:focus-visible,
+.award-link:focus-visible,
+.award-preview:focus-visible {
+    outline: 3px solid var(--accent);
+    outline-offset: 3px;
+}
+
 .hero-photo {
     grid-area: photo;
     align-self: center;
@@ -178,7 +189,7 @@ h1, .brand {
     border: 3px solid var(--ink);
 }
 
-.section-add {
+.section {
     padding: 4.5rem 0 5rem;
 }
 
@@ -374,6 +385,7 @@ h1, .brand {
     border-top: 1px solid var(--line);
 }
 
+/* Layout responsif untuk layar kecil */
 @media (max-width: 600px) {
     .hero-grid {
         grid-template-columns: 1fr;
@@ -390,7 +402,7 @@ h1, .brand {
     .site-header .container {
         gap: 1rem;
     }
-    .site-header nav {
+    .site-header nav ul {
         gap: 1rem;
     }
     .experience-item {

@@ -15,8 +15,15 @@
         <div class="container">
             <a href="#profile" class="brand">Suta</a>
             <nav>
-                <a href="#profile">Profile</a>
-                <a href="#experience">Experience</a>
+                <div class="divAnimation">
+                    <a href="#profile">Profile</a>
+                </div>
+                <div class="divAnimation">
+                    <a href="#experience">Experience</a>
+                </div>
+                <div class="divAnimation">
+                    <a href="#awards">Awards</a>
+                </div>
             </nav>
         </div>
     </header>
@@ -52,20 +59,13 @@
                 </div>
             </div>
         </section>
-        <section class="hero">
-            <div class="container">
-                <div class="section-heading">
-                    <h2>Education</h2>
-                </div>
-            </div>
-        </section>
-        <section class="section-add">
+        <section class="section-add" id ="experience">
             <div class="container">
                 <div class="section-heading">
                     <h2>Experience</h2>
                 </div>
                 <div class="experience-list">
-                    <article class="experience-item">
+                    <div class="experience-item" data-aos="fade-up">
                         <div class="experience-period">July 2026 &mdash; Present</div>
                         <div class="experience-content">
                             <div class="experience-title">
@@ -73,10 +73,71 @@
                                 <p>Faculty of Computer Science Universitas Indonesia</p>
                             </div>
                             <ul>
+                                <li>Membantu dalam bagian proses pembelajran dengan </li>
+                            </ul>
+                        </div>
+                        <img class="organization-logo" src="/static/img/logoUI.jpg" alt="Organization image">
+                    </div>
+                    <div class="experience-item" data-aos="fade-up" data-aos-delay="100">
+                        <div class="experience-period">April 2026 &mdash; Present</div>
+                        <div class="experience-content">
+                            <div class="experience-title">
+                                <h3>Staff of Data Analytics Dash Competition</h3>
+                                <p>COMPFEST 18</p>
+                            </div>
+                            <ul>
                                 <li>lorem ipsum dolor sit amet.</li>
                             </ul>
                         </div>
-                    </article>
+                        <img class="organization-logo" src="/static/img/logoCompfest.jpg" alt="COMPFEST 18 image">
+                    </div>
+                    <div class="experience-item" data-aos="fade-up" data-aos-delay="200">
+                        <div class="experience-period">March 2026 &mdash; Present</div>
+                        <div class="experience-content">
+                            <div class="experience-title">
+                                <h3>Arts & Sports Staff</h3>
+                                <p>KMHD Universitas Indonesia</p>
+                            </div>
+                            <ul>
+                                <li>lorem ipsum dolor sit amet.</li>
+                            </ul>
+                        </div>
+                        <img class="organization-logo" src="/static/img/logoKMHD.jpg" alt="Organization image">
+                    </div>
+                    <div class="experience-item" data-aos="fade-up" data-aos-delay="300">
+                        <div class="experience-period">January 2026 &mdash; July 2026</div>
+                        <div class="experience-content">
+                            <div class="experience-title">
+                                <h3>Academic & Teaching Assistant</h3>
+                                <p>BETIS Faculty of Computer Science Universitas Indonesia</p>
+                            </div>
+                            <ul>
+                                <li>lorem ipsum dolor sit amet.</li>
+                            </ul>
+                        </div>
+                        <img class="organization-logo" src="/static/img/logoBETIS.jpg" alt="BETIS image">
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="hero" id="awards">
+            <div class="container">
+                <div class="section-heading">
+                    <h2>Awards</h2>
+                </div>
+                <div class="awards-grid">
+                    <div class="award-card" data-aos="fade-up">
+                        <a class="award-preview" href="/static/awards/award-1.pdf" target="_blank" rel="noopener">
+                            <img src="/static/img/Anforcom_Piagam.jpg" alt="Preview of award certificate">
+                            <span class="award-file-label">Open PDF</span>
+                        </a>
+                        <div class="award-body">
+                            <p class="award-year">2023</p>
+                            <h3>Juara 2 Diponegoro Logic Competition</h3>
+                            <p class="award-issuer">ANFORCOM Universitas Diponegoro</p>
+                            <a class="award-link" href="/static/awards/award-1.pdf" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -91,7 +152,7 @@
 
     <footer class="site-footer">
         <div class="container">
-            <p>&copy; 2026 Burhan. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+            <p>&copy; 2026 Suta. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>
     </footer>
 </body>

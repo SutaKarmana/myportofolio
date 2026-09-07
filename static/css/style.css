@@ -385,7 +385,7 @@ h1, .brand {
     border-top: 1px solid var(--line);
 }
 
-/* Layout satu kolom untuk layar kecil. */
+/* Layout responsif untuk layar kecil */
 @media (max-width: 600px) {
     .hero-grid {
         grid-template-columns: 1fr;

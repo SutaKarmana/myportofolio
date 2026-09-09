@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Suta Karmana - Portfolio</title>
+    <title>{{ name }} - Portfolio</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <!-- Font dan animasi digunakan untuk menjaga tampilan tetap konsisten. -->
@@ -15,11 +15,11 @@
     <!-- Navigasi utama untuk berpindah antarbagian portfolio. -->
     <header class="site-header">
         <div class="container">
-            <a href="#profile" class="brand">Suta</a>
+            <a href="#profile" class="brand">{{ name }}</a>
             <nav aria-label="Main navigation">
                 <ul>
-                    <li><a href="#profile">Profile</a></li>
-                    <li><a href="#experience">Experience</a></li>
+                    <li><a href="{% url 'main:show_main' %}">Profile</a></li>
+                    <li><a href="{% url 'main:show_experience' %}">Experience</a></li>
                     <li><a href="#awards">Awards</a></li>
                 </ul>
             </nav>
@@ -32,22 +32,22 @@
             <div class="container hero-grid">
                 <div class="hero-identity">
                     <p class="hero-kicker">Computer Science &middot; Universitas Indonesia</p>
-                    <h1>I Nyoman Yadnya Suta Karmana</h1>
+                    <h1>{{ name }}</h1>
                 </div>
                 <div class="hero-photo">
                     <div class="photo-block"></div>
-                    <img class="avatar" src="/static/img/profile.jpeg" alt="Photo of Suta Karmana">
+                    <img class="avatar" src="/static/img/profile.jpeg" alt="Photo of {{ name }}">
                 </div>
                 <div class="hero-details">
-                    <p class="bio">An Information Systems student with a strong interest in Data Analytics, currently developing skills in Software Development and Business Development. Enthusiastic about Business Plan Competitions and Data Mining Competition.</p>
+                    <p class="bio">{{ bio }}</p>
                     <dl class="meta-list">
                         <div class="meta-row">
                             <dt>NPM</dt>
-                            <dd>2506615993</dd>
+                            <dd>{{ npm }}</dd>
                         </div>
                         <div class="meta-row">
                             <dt>Program</dt>
-                            <dd>S1 Sistem Informasi</dd>
+                            <dd>{{ study_program }}</dd>
                         </div>
                     </dl>
                     <!-- Tautan kontak untuk mengakses profil profesional. -->
@@ -229,7 +229,7 @@
 
     <footer class="site-footer">
         <div class="container">
-            <p>&copy; 2026 Suta. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
         </div>
     </footer>
     <!-- AOS memberi animasi ringan saat konten muncul di layar. -->

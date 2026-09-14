@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from main.models import Experience
+from main.models import Award, Experience
 
 
 class MainTest(TestCase):
@@ -39,7 +39,7 @@ class MainTest(TestCase):
         self.assertContains(response, self.experience.title)
         self.assertContains(response, self.experience.description)
         self.assertContains(response, "Part-Time")
-        self.assertContains(response, "Sedang berlangsung")
+        self.assertContains(response, "Present")
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
 
     def test_empty_experience_page(self):
@@ -54,5 +54,61 @@ class MainTest(TestCase):
         response = self.client.get(reverse("main:show_experience"))
 
         self.assertFalse(self.experience.is_ongoing)
-        self.assertContains(response, "Selesai")
-        self.assertNotContains(response, "Sedang berlangsung")
+        self.assertContains(response, self.experience.ended_at.strftime("%B %Y"))
+        self.assertNotContains(response, "Present")
+
+    def test_award_model(self):
+        award = Award.objects.create(
+            title="Juara 1 Web Design",
+            issuer="INVOFEST",
+            year=2023,
+        )
+
+        self.assertEqual(str(award), "Juara 1 Web Design (2023)")
+        self.assertEqual(award.issuer, "INVOFEST")
+        self.assertEqual(award.year, 2023)
+
+    def test_awards_url_is_accessible(self):
+        response = self.client.get(reverse("main:show_awards"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "awards.html")
+
+    def test_awards_page(self):
+        award = Award.objects.create(
+            title="Juara 2 Brain Challenge Competition",
+            issuer="Brain Challenge Universitas Telkom",
+            year=2024,
+            thumbnail="/static/img/BrainChallenge.jpg",
+            certificate_url="/static/pdfPrestasi/YaudahlahYa.pdf",
+        )
+
+        response = self.client.get(reverse("main:show_awards"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "awards.html")
+        self.assertContains(response, award.title)
+        self.assertContains(response, award.issuer)
+        self.assertContains(response, award.thumbnail)
+        self.assertContains(response, award.certificate_url)
+
+    def test_awards_are_ordered_by_year(self):
+        older_award = Award.objects.create(
+            title="Juara 1 Web Design",
+            issuer="INVOFEST",
+            year=2023,
+        )
+        newer_award = Award.objects.create(
+            title="Juara 2 Brain Challenge Competition",
+            issuer="Brain Challenge Universitas Telkom",
+            year=2024,
+        )
+
+        awards = list(Award.objects.all())
+
+        self.assertEqual(awards, [newer_award, older_award])
+
+    def test_empty_awards_page(self):
+        response = self.client.get(reverse("main:show_awards"))
+
+        self.assertContains(response, "Belum ada penghargaan yang ditambahkan.")

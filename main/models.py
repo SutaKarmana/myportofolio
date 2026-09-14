@@ -33,6 +33,7 @@ class Education(models.Model):
     description = models.TextField()
     started_year = models.PositiveIntegerField()
     ended_year = models.PositiveIntegerField(blank=True, null=True)
+    thumbnail = models.URLField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.institusi} - {self.program}"

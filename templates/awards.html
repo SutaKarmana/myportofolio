@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css?v=color-palette-1">
-        <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/style.css">
     <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
 </head>
 <body>
@@ -33,6 +33,7 @@
                     <h2>Awards</h2>
                 </div>
                 <div class="awards-grid">
+                    <!-- Setiap objek Award dari database ditampilkan sebagai kartu. -->
                     {% for award in award_list %}
                         <article class="award-card" data-aos="fade-up">
                             {% if award.certificate_url %}
@@ -59,6 +60,7 @@
                             </div>
                         </article>
                     {% empty %}
+                        <!-- Pesan kondisi kosong jika belum ada penghargaan. -->
                         <p>Belum ada penghargaan yang ditambahkan.</p>
                     {% endfor %}
                 </div>

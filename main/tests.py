@@ -2,7 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from main.models import Award, Experience
+from main.models import Award, Education, Experience
 
 
 class MainTest(TestCase):
@@ -47,6 +47,28 @@ class MainTest(TestCase):
         response = self.client.get(reverse("main:show_experience"))
 
         self.assertContains(response, "Belum ada pengalaman yang ditambahkan.")
+
+    def test_education_page(self):
+        education = Education.objects.create(
+            institusi="Universitas Indonesia",
+            program="Sistem Informasi",
+            description="Mempelajari sistem informasi dan pengembangan aplikasi.",
+            started_year=2022,
+        )
+
+        response = self.client.get(reverse("main:show_education"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "education.html")
+        self.assertContains(response, education.institusi)
+        self.assertContains(response, education.program)
+        self.assertContains(response, education.description)
+        self.assertContains(response, "Sekarang")
+
+    def test_empty_education_page(self):
+        response = self.client.get(reverse("main:show_education"))
+
+        self.assertContains(response, "Belum ada riwayat pendidikan yang ditambahkan.")
 
     def test_completed_experience(self):
         self.experience.ended_at = timezone.now()

@@ -43,6 +43,18 @@
 .site-header nav a:focus-visible {
     color: var(--accent);
 }
+
+.site-header nav a.is-active {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    color: var(--paper);
+    background-color: var(--accent);
+}
+
+.site-header nav a.is-active:hover,
+.site-header nav a.is-active:focus-visible {
+    color: var(--paper);
+}
 /* Variabel warna menjaga tampilan tetap konsisten dan mudah diubah. */
 :root {
     --ink: #1c1917;

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Awards - {{ name }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css?v=color-palette-1">
+        <link rel="stylesheet" href="/static/css/style.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+</head>
+<body>
+    <header class="site-header">
+        <div class="container">
+            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
+            <nav aria-label="Main navigation">
+                <ul>
+                    <li><a class="{% if request.resolver_match.url_name == 'show_main' %}is-active{% endif %}" href="{% url 'main:show_main' %}">Profile</a></li>
+                    <li><a class="{% if request.resolver_match.url_name == 'show_education' %}is-active{% endif %}" href="{% url 'main:show_education' %}">Education</a></li>
+                    <li><a class="{% if request.resolver_match.url_name == 'show_experience' %}is-active{% endif %}" href="{% url 'main:show_experience' %}">Experience</a></li>
+                    <li><a class="{% if request.resolver_match.url_name == 'show_awards' %}is-active{% endif %}" href="{% url 'main:show_awards' %}">Awards</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="section" id="awards">
+            <div class="container">
+                <div class="section-heading">
+                    <h2>Awards</h2>
+                </div>
+                <div class="awards-grid">
+                    {% for award in award_list %}
+                        <article class="award-card" data-aos="fade-up">
+                            {% if award.certificate_url %}
+                                <a class="award-preview" href="{{ award.certificate_url }}" target="_blank" rel="noopener">
+                            {% else %}
+                                <div class="award-preview">
+                            {% endif %}
+                                    {% if award.thumbnail %}
+                                        <img src="{{ award.thumbnail }}" alt="Preview of {{ award.title }} certificate">
+                                    {% endif %}
+                                    <span class="award-file-label">{% if award.certificate_url %}Open PDF{% else %}Award{% endif %}</span>
+                            {% if award.certificate_url %}
+                                </a>
+                            {% else %}
+                                </div>
+                            {% endif %}
+                            <div class="award-body">
+                                <p class="award-year">{{ award.year }}</p>
+                                <h3>{{ award.title }}</h3>
+                                <p class="award-issuer">{{ award.issuer }}</p>
+                                {% if award.certificate_url %}
+                                    <a class="award-link" href="{{ award.certificate_url }}" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
+                                {% endif %}
+                            </div>
+                        </article>
+                    {% empty %}
+                        <p>Belum ada penghargaan yang ditambahkan.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
+        </div>
+    </footer>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>AOS.init();</script>
+</body>
+</html>

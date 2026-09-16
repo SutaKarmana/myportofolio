@@ -1,33 +1,6 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ name }} - Portfolio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <!-- Font dan animasi digunakan untuk menjaga tampilan tetap konsisten. -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css?v=color-palette-1">
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-</head> 
-<body>
-    <!-- Navigasi utama untuk berpindah antarbagian portfolio. -->
-    <header class="site-header">
-        <div class="container">
-            <a href="#profile" class="brand">{{ name }}</a>
-            <nav aria-label="Main navigation">
-                <ul>
-                    <li><a class="{% if request.resolver_match.url_name == 'show_main' %}is-active{% endif %}" href="{% url 'main:show_main' %}">Profile</a></li>
-                    <li><a class="{% if request.resolver_match.url_name == 'show_education' %}is-active{% endif %}" href="{% url 'main:show_education' %}">Education</a></li>
-                    <li><a class="{% if request.resolver_match.url_name == 'show_experience' %}is-active{% endif %}" href="{% url 'main:show_experience' %}">Experience</a></li>
-                    <li><a class="{% if request.resolver_match.url_name == 'show_awards' %}is-active{% endif %}" href="{% url 'main:show_awards' %}">Awards</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+{% extends 'base.html' %}
 
+{% block content %}
     <main>
         <!-- Bagian pembuka berisi identitas, foto, dan informasi singkat. -->
         <section class="hero" id="profile">
@@ -62,16 +35,4 @@
             </div>
         </section>
     </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
-        </div>
-    </footer>
-    <!-- AOS memberi animasi ringan saat konten muncul di layar. -->
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-        AOS.init();
-    </script>
-</body>
-</html>
+{% endblock content %}

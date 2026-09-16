@@ -19,7 +19,7 @@ load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://user-name-myportofolio.pws.cs.ui.ac.id",
+    "https://i-nyoman52-myportofolio.pws.cs.ui.ac.id/",
 ]
 
 CSRF_COOKIE_SECURE    = True
@@ -64,7 +64,7 @@ ROOT_URLCONF = 'portofolio.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'templates'], #sudah ada
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

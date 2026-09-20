@@ -1,6 +1,34 @@
 from django import forms
 
-from main.models import Project
+from main.models import Experience, Project
+
+
+class ExperienceForm(forms.ModelForm):
+    class Meta:
+        model = Experience
+        fields = [
+            "title",
+            "description",
+            "category",
+            "thumbnail",
+        ]
+
+        labels = {
+            "title": "Judul Pengalaman",
+            "description": "Deskripsi Pengalaman",
+            "category": "Kategori",
+            "thumbnail": "URL Thumbnail",
+        }
+
+        widgets = {
+            "title": forms.TextInput(attrs={"placeholder": "Asisten Dosen"}),
+            "description": forms.Textarea(
+                attrs={"placeholder": "Ceritakan pengalamanmu", "rows": 4}
+            ),
+            "thumbnail": forms.URLInput(
+                attrs={"placeholder": "https://example.com/logo.jpg"}
+            ),
+        }
 
 
 class ProjectForm(forms.ModelForm):

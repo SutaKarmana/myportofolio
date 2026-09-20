@@ -5,7 +5,13 @@
         <section class="experience-section" id="experience">
             <div class="container">
                 <p class="section-kicker">Tempat saya mengasah keahlian</p>
-                <h1>Experience</h1>
+                <div class="project-header">
+                    <h1>Experience</h1>
+                    <a href="{% url 'main:create_experience' %}" class="button project-add-button">
+                        <span aria-hidden="true">+</span>
+                        Tambah Pengalaman
+                    </a>
+                </div>
 
                 <div class="experience-grid">
                     <div class="experience-list">
@@ -28,6 +34,13 @@
                                     </div>
 
                                     <p>{{ experience.description|linebreaksbr }}</p>
+                                    <div class="project-actions">
+                                        <a href="{% url 'main:update_experience' experience.id %}" class="button">Edit</a>
+                                        <form method="post" action="{% url 'main:delete_experience' experience.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="button button-danger">Hapus</button>
+                                        </form>
+                                    </div>
                                 </div>
 
                                 {% if experience.thumbnail %}

@@ -7,6 +7,7 @@
             <div class="container">
                 <div class="section-heading">
                     <h2>Awards</h2>
+                    <a href="{% url 'main:create_award' %}" class="button">Tambah Penghargaan</a>
                 </div>
                 <div class="awards-grid">
                     <!-- Setiap objek Award dari database ditampilkan sebagai kartu. -->
@@ -33,6 +34,13 @@
                                 {% if award.certificate_url %}
                                     <a class="award-link" href="{{ award.certificate_url }}" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
                                 {% endif %}
+                                <div class="project-actions">
+                                    <a href="{% url 'main:update_award' award.id %}" class="button">Edit</a>
+                                    <form method="post" action="{% url 'main:delete_award' award.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="button button-danger">Hapus</button>
+                                    </form>
+                                </div>
                             </div>
                         </article>
                     {% empty %}

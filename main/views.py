@@ -9,11 +9,12 @@ from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from main.models import Award, Experience, Education, Project
-from main.forms import ExperienceForm, ProjectForm
+from main.forms import AwardForm, EducationForm, ExperienceForm, ProjectForm
 
 PROFILE_NAME = "I Nyoman Yadnya Suta Karmana"
 
 
+# Menyimpan thumbnail upload ke static/img lalu mencatat alamatnya pada Experience.
 def _save_experience_thumbnail(form, experience):
     source = form.cleaned_data.get("thumbnail_source") or "url"
     thumbnail_file = form.cleaned_data.get("thumbnail_file")
@@ -35,6 +36,7 @@ def _save_experience_thumbnail(form, experience):
     experience.save()
 
 def show_main(request):
+    # Menyiapkan data profil untuk halaman utama.
     context = {
         "name": PROFILE_NAME,
         "npm": "2506615993",
@@ -121,6 +123,7 @@ def get_experience_json(request):
     return HttpResponse(experiences_json, content_type="application/json")
 
 def show_education(request):
+    # Mengambil semua data pendidikan untuk ditampilkan pada template.
     context = {
         "name": PROFILE_NAME,
         "education_list": Education.objects.all(),
@@ -128,12 +131,85 @@ def show_education(request):
     return render(request, "education.html", context)
 
 
+def create_education(request):
+    # Memproses form untuk menambahkan data pendidikan baru.
+    form = EducationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Pendidikan baru berhasil ditambahkan!")
+        return redirect("main:show_education")
+
+    return render(request, "education_form.html", {"name": PROFILE_NAME, "form": form})
+
+
+def update_education(request, education_id):
+    # Mengisi form dengan data lama untuk proses edit pendidikan.
+    education = get_object_or_404(Education, pk=education_id)
+    form = EducationForm(request.POST or None, instance=education)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Pendidikan berhasil diperbarui!")
+        return redirect("main:show_education")
+
+    return render(
+        request,
+        "education_form.html",
+        {"name": PROFILE_NAME, "form": form, "education": education},
+    )
+
+
+def delete_education(request, education_id):
+    # Menghapus data pendidikan setelah tombol hapus dikirim melalui POST.
+    education = get_object_or_404(Education, pk=education_id)
+    if request.method == "POST":
+        education.delete()
+        messages.success(request, "Pendidikan berhasil dihapus!")
+    return redirect("main:show_education")
+
+
 def show_awards(request):
+    # Mengambil data penghargaan sesuai urutan dari model.
     context = {
         "name": PROFILE_NAME,
         "award_list": Award.objects.all(),
     }
     return render(request, "awards.html", context)
+
+
+def create_award(request):
+    # Memproses form untuk menambahkan penghargaan baru.
+    form = AwardForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Penghargaan baru berhasil ditambahkan!")
+        return redirect("main:show_awards")
+
+    return render(request, "award_form.html", {"name": PROFILE_NAME, "form": form})
+
+
+def update_award(request, award_id):
+    # Mengisi form dengan data lama untuk proses edit penghargaan.
+    award = get_object_or_404(Award, pk=award_id)
+    form = AwardForm(request.POST or None, instance=award)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Penghargaan berhasil diperbarui!")
+        return redirect("main:show_awards")
+
+    return render(
+        request,
+        "award_form.html",
+        {"name": PROFILE_NAME, "form": form, "award": award},
+    )
+
+
+def delete_award(request, award_id):
+    # Menghapus data penghargaan setelah tombol hapus dikirim melalui POST.
+    award = get_object_or_404(Award, pk=award_id)
+    if request.method == "POST":
+        award.delete()
+        messages.success(request, "Penghargaan berhasil dihapus!")
+    return redirect("main:show_awards")
 
 
 #Tutorial 3

@@ -1,4 +1,8 @@
+from pathlib import Path
 from django.shortcuts import render
+from uuid import uuid4
+
+from django.conf import settings
 from django.contrib import messages
 from django.core import serializers
 from django.http import HttpResponse
@@ -8,6 +12,27 @@ from main.models import Award, Experience, Education, Project
 from main.forms import ExperienceForm, ProjectForm
 
 PROFILE_NAME = "I Nyoman Yadnya Suta Karmana"
+
+
+def _save_experience_thumbnail(form, experience):
+    source = form.cleaned_data.get("thumbnail_source") or "url"
+    thumbnail_file = form.cleaned_data.get("thumbnail_file")
+
+    if source == "upload" and thumbnail_file:
+        image_directory = Path(settings.BASE_DIR) / "static" / "img"
+        image_directory.mkdir(parents=True, exist_ok=True)
+        file_name = f"experience-{uuid4().hex}{Path(thumbnail_file.name).suffix.lower()}"
+        file_path = image_directory / file_name
+
+        with file_path.open("wb+") as destination:
+            for chunk in thumbnail_file.chunks():
+                destination.write(chunk)
+
+        experience.thumbnail = f"/static/img/{file_name}"
+    else:
+        experience.thumbnail = experience.thumbnail or ""
+
+    experience.save()
 
 def show_main(request):
     context = {
@@ -40,10 +65,11 @@ def show_experience(request):
 
 def create_experience(request):
     # Tugas 3: membuat data Experience menggunakan form.
-    form = ExperienceForm(request.POST or None)
+    form = ExperienceForm(request.POST or None, request.FILES or None)
 
     if request.method == "POST" and form.is_valid():
-        form.save()
+        experience = form.save(commit=False)
+        _save_experience_thumbnail(form, experience)
         messages.success(request, "Pengalaman baru berhasil ditambahkan!")
         return redirect("main:show_experience")
 
@@ -57,10 +83,15 @@ def create_experience(request):
 def update_experience(request, experience_id):
     # Tugas 3: memperbarui data Experience menggunakan form yang sudah terisi.
     experience = get_object_or_404(Experience, pk=experience_id)
-    form = ExperienceForm(request.POST or None, instance=experience)
+    form = ExperienceForm(
+        request.POST or None,
+        request.FILES or None,
+        instance=experience,
+    )
 
     if request.method == "POST" and form.is_valid():
-        form.save()
+        experience = form.save(commit=False)
+        _save_experience_thumbnail(form, experience)
         messages.success(request, "Pengalaman berhasil diperbarui!")
         return redirect("main:show_experience")
 

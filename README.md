@@ -5,6 +5,29 @@ NPM : 2506615993
 
 Class : PBP F
 
+## Deskripsi Proyek
+
+Proyek ini merupakan website portofolio pribadi yang dibuat menggunakan Django. Website menampilkan informasi profile, education, experience, awards, dan projects. Data pada beberapa bagian portofolio disimpan di database melalui model Django, kemudian diambil oleh view dan ditampilkan pada template. Pada bagian Education, Experience, dan Awards, pengguna dapat menambahkan, mengubah, dan menghapus data melalui form. Proyek ini juga menyediakan endpoint JSON untuk data Experience dan Project.
+
+## Setup dan Menjalankan Proyek
+
+Pastikan Python sudah terpasang, kemudian jalankan perintah berikut dari folder proyek:
+
+```bash
+python -m venv env
+env\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py runserver
+```
+
+Setelah server berjalan, buka `http://127.0.0.1:8000/` pada browser. Untuk memeriksa konfigurasi dan menjalankan test, gunakan:
+
+```bash
+python manage.py check
+python manage.py test
+```
+
 #### Pertanyaan Reflektif
 
 1. Jawaban no 1:
@@ -50,7 +73,7 @@ Konfirmasi  : Saya sudah menanyakan hal ini terhadap asdos di lab dan diperboleh
 
     Setelah menerima context, template `education.html` menampilkan setiap data menggunakan perulangan `{% for education in education_list %}`. Setiap objek kemudian ditampilkan sebagai kartu pendidikan. Jika belum ada data Education di database, bagian `{% empty %}` akan menampilkan pesan bahwa belum ada riwayat pendidikan. Setelah template selesai diproses, Django mengirimkan hasil render berupa HTML ke browser sehingga halaman Education dapat ditampilkan kepada pengguna.
 
-    Bagian lain seperti Profile, Experience, dan Awards juga dapat dibuka melalui navbar dan memiliki URL, view, model, serta template masing-masing. Alurnya pada dasarnya sama, tetapi Education saya gunakan sebagai contoh karena alurnya cukup jelas untuk menunjukkan bagaimana data portofolio diambil dari database dan ditampilkan secara dinamis.
+    Bagian lain seperti Profile, Experience, dan Awards juga dapat dibuka melalui navbar dan memiliki URL, view, model, serta template masing-masing. Alurnya pada dasarnya sama, tetapi Education saya gunakan sebagai contoh karena alurnya cukup jelas untuk menunjukkan bagaimana data portofolio diambil dari database dan ditampilkan secara dinamis. Pada perkembangan terbaru, Education dan Awards juga sudah memiliki tombol tambah, edit, dan hapus yang terhubung ke form masing-masing.
 
 2. **Mengapa data sebaiknya disimpan pada model dan tidak ditulis langsung di template?**
 
@@ -139,11 +162,137 @@ Berikut adalah link Share Chat Gemini yang saya gunakan sebagai dokumentasi pros
 ## Harap dibaca (Tugas 2)
 Saya ga hanya membuat 1 model saja, tapi merekrontruksi section lain dengan konsep yang serupa, guna memperbagus tampilan web & membuat pengembangan di tahap selanjutnya jadi lebih mudah. 
 
-
 ### TUGAS 3
 
 #### Pertanyaan Reflektif
 
+1. Jawaban no 1:
 
-## Harap dibaca (Tugas 2)
-Dikarenakan saya sudah terlanjur mengerjakannya sambilan tutorial kemarin.. ternyata ga sadar kalau refaktor semuanya itu di tugas. Jadi untuk memperlihatkan bahwa saya sudah mengerjakan progresnnya saja tandai dengan memberikan commentar
+    `ModelForm` digunakan karena dapat menghubungkan form secara langsung dengan model Django. Pada proyek ini, saya menggunakan `ExperienceForm`, `EducationForm`, dan `AwardForm` berdasarkan model masing-masing. Field seperti judul, deskripsi, institusi, tahun, thumbnail, dan link sertifikat dapat dibuat dari struktur model yang sudah ada. Dengan cara ini, saya tidak perlu menulis ulang seluruh field HTML secara manual dan dapat mengurangi kemungkinan perbedaan antara form dengan model yang ada di database.
+
+    Selain membuat field secara otomatis, `ModelForm` juga membantu proses validasi data. Contohnya, field `thumbnail` dan `certificate_url` yang berasal dari `URLField` akan diperiksa sebagai URL, sedangkan field tahun akan diperiksa sebagai angka. Setelah data valid, saya dapat menggunakan `form.save()` untuk menyimpan data ke database. Pada bagian upload thumbnail Experience, saya menggunakan `form.save(commit=False)` terlebih dahulu agar file dapat diproses sebelum objek Experience disimpan.
+
+    Sementara itu, `{% csrf_token %}` digunakan untuk melindungi form dari serangan Cross-Site Request Forgery atau CSRF. Serangan ini dapat terjadi ketika pengguna yang sedang login secara tidak sadar mengirimkan request dari situs lain ke aplikasi. Token CSRF memastikan bahwa request POST benar-benar berasal dari form yang dibuat oleh aplikasi Django. Jika token tersebut tidak ditambahkan, Django biasanya akan menolak request POST karena dianggap tidak aman.
+
+2. Jawaban no 2:
+
+    JSON lebih sering digunakan dalam pengembangan aplikasi web modern karena sintaksnya lebih ringkas dan lebih mudah dibaca. Struktur JSON juga mirip dengan object dan array pada JavaScript, sehingga data dapat langsung digunakan oleh JavaScript pada sisi client tanpa proses yang terlalu panjang. Hal ini membuat JSON cocok digunakan untuk komunikasi antara frontend dan backend melalui API.
+
+    Dibandingkan XML, JSON biasanya membutuhkan lebih sedikit karakter karena tidak menggunakan tag pembuka dan tag penutup untuk setiap data. Ukuran data yang lebih kecil dapat membantu mengurangi penggunaan bandwidth dan membuat proses pertukaran data menjadi lebih efisien. JSON juga didukung oleh banyak bahasa pemrograman dan framework web, termasuk Django, sehingga lebih praktis untuk digunakan.
+
+    XML tetap memiliki kelebihan, terutama untuk dokumen yang membutuhkan struktur sangat kompleks, atribut, atau validasi skema yang ketat. Namun, untuk kebutuhan API dan pertukaran data pada aplikasi portofolio ini, JSON lebih sederhana, ringan, dan sesuai dengan kebutuhan.
+
+3. Jawaban no 3:
+
+    Pada proyek ini, alur pengembalian data Experience dalam format JSON dimulai ketika pengguna atau client mengakses URL API `/api/experience/`. URL tersebut diarahkan oleh `main/urls.py` ke fungsi `get_experience_json` pada `main/views.py`. View tersebut mengambil seluruh data Experience dari database menggunakan `Experience.objects.all()`.
+
+    Data yang diperoleh dari query tersebut masih berupa object atau QuerySet Django, bukan data JSON biasa. Oleh karena itu, data tersebut diproses menggunakan `serializers.serialize("json", experiences)`. Hasil proses ini kemudian dikembalikan menggunakan `HttpResponse` dengan `content_type="application/json"`. Dengan content type tersebut, client dapat mengetahui bahwa response yang diterima memiliki format JSON.
+
+    Serialization diperlukan karena object model Django tidak dapat langsung dikirim sebagai response JSON. Object tersebut masih memiliki struktur dan perilaku khusus dari Django, sedangkan JSON hanya mengenal tipe data sederhana seperti object, array, string, angka, boolean, dan null. Serialization mengubah data model menjadi representasi JSON yang berisi informasi model, primary key, dan field-field yang dimiliki objek. Dengan begitu, data dapat dikirim melalui HTTP dan digunakan oleh aplikasi lain atau diproses kembali oleh Django.
+
+
+## DOKUMENTASI AI Tugas 3
+
+### AI Disclosure
+
+Dalam mengerjakan Tugas 3, saya menggunakan GitHub Copilot yang terpasang di VS Code dan Google Gemini sebagai alat bantu belajar. Saya menggunakan kedua tools tersebut dengan peran yang berbeda. GitHub Copilot lebih banyak saya gunakan untuk membaca struktur proyek, membantu melakukan debugging, dan mengarahkan langkah perbaikan pada kode. Sementara itu, Gemini saya gunakan untuk memahami konsep `ModelForm`, keamanan `{% csrf_token %}`, format JSON, XML, dan proses serialization pada Django. Saya juga meminta bantuan AI untuk memperbaiki gaya bahasa dokumentasi agar lebih rapi dan mudah dipahami, tetapi isi dan keputusan akhirnya tetap saya sesuaikan sendiri.
+
+### Alur Pengerjaan Tugas 3
+
+Alur pengerjaan saya pada Tugas 3 adalah sebagai berikut:
+
+1. Saya membaca kembali materi Tutorial 03 mengenai penggunaan form, pengiriman data melalui request, format JSON dan XML, serta serialization pada Django.
+2. Saya memeriksa struktur proyek yang sudah dibuat pada tugas sebelumnya, terutama `main/forms.py`, `main/views.py`, `main/urls.py`, `main/models.py`, serta template Experience, Education, dan Awards.
+3. Saya menggunakan GitHub Copilot di VS Code untuk membantu menemukan bagian yang perlu diperiksa ketika menambahkan fitur form. Copilot membantu saya memahami hubungan antara `ModelForm`, `request.POST`, `request.FILES`, `multipart/form-data`, dan proses penyimpanan thumbnail Experience, serta pola CRUD untuk Education dan Awards.
+4. Ketika menemukan bagian yang masih membingungkan, saya menggunakan Gemini untuk meminta penjelasan konsep dengan bahasa yang lebih mudah dipahami. Gemini membantu menjelaskan alasan penggunaan `ModelForm`, fungsi token CSRF, kelebihan JSON dibandingkan XML, dan alasan data model harus melalui proses serialization.
+5. Saya menyesuaikan saran AI dengan struktur proyek saya. Saya mempertahankan penggunaan `ExperienceForm`, menambahkan `EducationForm` dan `AwardForm`, serta memproses file Experience di view sebelum URL file disimpan pada field `thumbnail`.
+6. Setelah melakukan perubahan, saya memeriksa halaman form dan tombol CRUD melalui browser. Saya juga menjalankan `python manage.py check` serta `python manage.py test` untuk memastikan aplikasi tetap berjalan.
+
+Selain membantu kode, saya juga meminta AI untuk merapikan gaya bahasa pada dokumentasi agar penjelasannya lebih singkat, santai, dan tetap sesuai dengan proses pengerjaan saya.
+
+### Penggunaan GitHub Copilot
+
+GitHub Copilot saya gunakan terutama sebagai pendamping debugging di VS Code. Saya meminta Copilot membaca file yang berkaitan sebelum memberikan perubahan, kemudian saya mencoba saran tersebut satu per satu. Bagian yang dibantu Copilot antara lain:
+
+- memeriksa apakah `ExperienceForm` sudah memiliki `FileField` untuk menerima gambar;
+- memeriksa apakah view sudah meneruskan `request.FILES` ketika membuat atau memperbarui Experience;
+- memeriksa penggunaan `enctype="multipart/form-data"` pada template form;
+- membantu mencari penyebab tampilan pilihan Link dan Upload tidak tersusun dengan baik;
+- membantu menelusuri alur penyimpanan file ke `static/img` dan penyimpanan alamat file ke model;
+- membantu membuat `EducationForm` dan `AwardForm` berdasarkan field pada model masing-masing;
+- membantu menghubungkan tombol tambah, edit, dan hapus Education serta Awards ke URL dan view yang sesuai;
+- membantu memeriksa error dan memastikan perubahan tidak merusak fitur Experience yang sudah ada.
+
+Contoh langkah debugging yang saya lakukan bersama Copilot adalah ketika saya menyadari bahwa file upload tidak cukup ditangani hanya dengan `request.POST`. Dari pemeriksaan tersebut, saya memahami bahwa data teks dikirim melalui `request.POST`, sedangkan file dikirim melalui `request.FILES`. Saya kemudian memastikan pemanggilan form menggunakan:
+
+```python
+form = ExperienceForm(request.POST or None, request.FILES or None)
+```
+
+Saya juga memastikan template menggunakan:
+
+```html
+<form method="post" enctype="multipart/form-data">
+```
+
+### Penggunaan Gemini untuk Memahami Konsep
+
+Gemini saya gunakan untuk memahami konsep, bukan hanya untuk menyalin kode. Beberapa hal yang saya tanyakan adalah sebagai berikut:
+
+1. Mengapa `ModelForm` lebih praktis dan bagaimana Django memvalidasi datanya berdasarkan model.
+2. Mengapa `{% csrf_token %}` diperlukan pada form POST untuk mencegah serangan CSRF.
+3. Mengapa JSON lebih sering dipakai daripada XML dalam API modern.
+4. Bagaimana alur endpoint `/api/experience/` dari URL sampai mengembalikan data JSON.
+5. Mengapa object atau QuerySet Django perlu diubah menjadi JSON sebelum dikirim melalui HTTP.
+
+Setelah mendapatkan penjelasan dari Gemini, saya mencocokkannya dengan kode proyek. Contohnya, penjelasan tentang serialization saya cocokkan dengan fungsi `get_experience_json` pada `main/views.py`, yaitu ketika data `Experience.objects.all()` diproses menggunakan `serializers.serialize("json", experiences)` sebelum dikembalikan melalui `HttpResponse`.
+
+### Contoh Prompt yang Saya Gunakan
+
+Berikut beberapa contoh prompt yang saya gunakan selama mengerjakan Tugas 3:
+
+1.
+    > Coba cek alur form Experience saya. Saya ingin menerima upload gambar, tetapi database saya masih menggunakan URLField. Jelaskan bagian mana yang harus ditambahkan dan bagaimana alurnya tanpa menambahkan library yang tidak diperlukan.
+
+2.
+    > Aku sempat bingung pada bagian add formnya, karena mengakses Json . Cara ceknya gimana?
+
+3.
+    > Jelaskan fungsi csrf_token pada form Django dan apa yang terjadi jika token tersebut tidak digunakan.
+
+4.
+    > Jelaskan alur get_experience_json dari URL, view, QuerySet, serialization, sampai menjadi HttpResponse JSON.
+
+5.
+    > Coba cek apakah dokumentasi README saya sudah memenuhi rubrik dokumentasi AI. Bagian mana yang perlu ditambahkan agar tools yang digunakan, bagian yang dibantu, dan proses verifikasinya terlihat jelas?
+6.
+    > Coba cek lagi pengerjaan saya, saya takut ada corner case yang membuat error
+
+### Verifikasi Hasil
+
+Saya tidak langsung menerima semua saran dari AI. Setiap perubahan saya periksa kembali dengan membaca file yang terkait, mencoba form Experience, Education, dan Awards melalui browser, menguji tombol tambah, edit, dan hapus, lalu menjalankan beberapa perintah berikut:
+
+```bash
+python manage.py check
+python manage.py test
+python manage.py showmigrations
+```
+
+Perintah `check` digunakan untuk memeriksa konfigurasi proyek, `test` digunakan untuk memastikan fungsi yang sudah ada tetap berjalan, sedangkan `showmigrations` digunakan untuk memeriksa status migration. Saya juga mencoba memilih sumber thumbnail Link dan Upload melalui browser, memeriksa pesan validasi ketika file belum dipilih, serta memastikan data Experience tetap dapat ditampilkan setelah disimpan.
+
+Pada saat dokumentasi ini dibuat, `python manage.py check` tidak menemukan masalah dan seluruh 18 test Django berhasil dijalankan. Test tersebut mencakup model, halaman, validasi form, endpoint JSON, serta alur CRUD Education dan Awards. Hasil tersebut saya gunakan sebagai pembanding terhadap saran AI, sehingga keputusan akhir tidak hanya berdasarkan jawaban AI tetapi juga berdasarkan hasil pengujian langsung.
+
+### Refleksi Penggunaan AI
+
+Penggunaan Copilot membantu saya mempercepat proses membaca kode dan menemukan hubungan antarfile dalam proyek Django. Copilot juga membantu menunjukkan bagian yang perlu diperiksa ketika sebuah fitur belum berjalan. Gemini membantu saya memahami alasan di balik penggunaan kode tersebut, terutama konsep `ModelForm`, CSRF, JSON, dan serialization. Dengan membagi penggunaan keduanya, saya tidak hanya mendapatkan solusi, tetapi juga lebih memahami alur kerja Django.
+
+Namun, AI tidak selalu memahami kondisi proyek secara lengkap. Beberapa saran perlu saya sesuaikan karena model `Experience` saya masih menyimpan thumbnail sebagai `URLField`, bukan `ImageField`. Saya juga menemukan bahwa perubahan tampilan form dapat terlihat berbeda karena dipengaruhi CSS yang sudah ada. Oleh karena itu, saya tetap memeriksa struktur file, mencoba hasilnya di browser, dan menjalankan test secara mandiri. Keputusan akhir, penyesuaian desain, dan pengecekan kebenaran implementasi tetap saya lakukan sendiri.
+
+### Link Percakapan Gemini Tugas 3
+
+Percakapan Gemini yang saya gunakan untuk memahami konsep dan melakukan cross-check akan saya sertakan pada bagian ini:
+
+`https://share.gemini.google/tGohVOMAYoNV`
+
+## Harap dibaca (Tugas 3)
+Dikarenakan saya sudah terlanjur mengerjakannya sambilan tutorial kemarin.. ternyata ga sadar kalau refaktor semuanya itu di tugas. Jadi untuk memperlihatkan bahwa saya sudah mengerjakan progresnnya saja tandai dengan memberikan commentar. Lalu saya merefaktor semua bagian dengan tambahan button mengarah ke form masing masing. Jadi ga hanya 1 , tetapi juga ada education ,experience, dan awards.

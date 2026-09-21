@@ -138,3 +138,12 @@ Berikut adalah link Share Chat Gemini yang saya gunakan sebagai dokumentasi pros
 
 ## Harap dibaca (Tugas 2)
 Saya ga hanya membuat 1 model saja, tapi merekrontruksi section lain dengan konsep yang serupa, guna memperbagus tampilan web & membuat pengembangan di tahap selanjutnya jadi lebih mudah. 
+
+
+### TUGAS 3
+
+#### Pertanyaan Reflektif
+
+
+## Harap dibaca (Tugas 2)
+Dikarenakan saya sudah terlanjur mengerjakannya sambilan tutorial kemarin.. ternyata ga sadar kalau refaktor semuanya itu di tugas. Jadi untuk memperlihatkan bahwa saya sudah mengerjakan progresnnya saja tandai dengan memberikan commentar

@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
+from main.forms import AwardForm, EducationForm, ExperienceForm
 from main.models import Award, Education, Experience
 
 
@@ -47,6 +48,77 @@ class MainTest(TestCase):
         response = self.client.get(reverse("main:show_experience"))
 
         self.assertContains(response, "Belum ada pengalaman yang ditambahkan.")
+
+    def test_experience_form_requires_uploaded_thumbnail(self):
+        form = ExperienceForm(
+            data={
+                "title": "Pengalaman",
+                "description": "Deskripsi",
+                "category": "research",
+                "thumbnail_source": "upload",
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("thumbnail_file", form.errors)
+
+    def test_experience_json_endpoint(self):
+        response = self.client.get(reverse("main:get_experience_json"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+        self.assertContains(response, self.experience.title)
+
+    def test_education_crud(self):
+        create_response = self.client.post(
+            reverse("main:create_education"),
+            {
+                "institusi": "Universitas Indonesia",
+                "program": "Sistem Informasi",
+                "description": "Mempelajari sistem informasi.",
+                "started_year": 2022,
+                "ended_year": "",
+                "thumbnail": "",
+            },
+        )
+        education = Education.objects.get(institusi="Universitas Indonesia")
+
+        self.assertRedirects(create_response, reverse("main:show_education"))
+        self.assertTrue(
+            EducationForm(
+                data={
+                    "institusi": education.institusi,
+                    "program": education.program,
+                    "description": education.description,
+                    "started_year": education.started_year,
+                    "ended_year": "",
+                    "thumbnail": "",
+                }
+            ).is_valid()
+        )
+
+        update_response = self.client.post(
+            reverse("main:update_education", args=[education.id]),
+            {
+                "institusi": "Universitas Terbaru",
+                "program": "Sistem Informasi",
+                "description": "Deskripsi terbaru.",
+                "started_year": 2022,
+                "ended_year": 2026,
+                "thumbnail": "",
+            },
+        )
+        education.refresh_from_db()
+
+        self.assertRedirects(update_response, reverse("main:show_education"))
+        self.assertEqual(education.institusi, "Universitas Terbaru")
+
+        delete_response = self.client.post(
+            reverse("main:delete_education", args=[education.id])
+        )
+
+        self.assertRedirects(delete_response, reverse("main:show_education"))
+        self.assertFalse(Education.objects.filter(pk=education.id).exists())
 
     def test_education_page(self):
         education = Education.objects.create(
@@ -134,3 +206,54 @@ class MainTest(TestCase):
         response = self.client.get(reverse("main:show_awards"))
 
         self.assertContains(response, "Belum ada penghargaan yang ditambahkan.")
+
+    def test_award_form_validates_year(self):
+        form = AwardForm(
+            data={
+                "title": "Juara 1",
+                "issuer": "Penyelenggara",
+                "year": "bukan tahun",
+                "thumbnail": "",
+                "certificate_url": "",
+            }
+        )
+
+        self.assertFalse(form.is_valid())
+        self.assertIn("year", form.errors)
+
+    def test_award_crud(self):
+        create_response = self.client.post(
+            reverse("main:create_award"),
+            {
+                "title": "Juara 1",
+                "issuer": "Penyelenggara",
+                "year": 2025,
+                "thumbnail": "",
+                "certificate_url": "",
+            },
+        )
+        award = Award.objects.get(title="Juara 1")
+
+        self.assertRedirects(create_response, reverse("main:show_awards"))
+
+        update_response = self.client.post(
+            reverse("main:update_award", args=[award.id]),
+            {
+                "title": "Juara Utama",
+                "issuer": "Penyelenggara",
+                "year": 2025,
+                "thumbnail": "",
+                "certificate_url": "",
+            },
+        )
+        award.refresh_from_db()
+
+        self.assertRedirects(update_response, reverse("main:show_awards"))
+        self.assertEqual(award.title, "Juara Utama")
+
+        delete_response = self.client.post(
+            reverse("main:delete_award", args=[award.id])
+        )
+
+        self.assertRedirects(delete_response, reverse("main:show_awards"))
+        self.assertFalse(Award.objects.filter(pk=award.id).exists())

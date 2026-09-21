@@ -1,5 +1,4 @@
 from pathlib import Path
-from django.shortcuts import render
 from uuid import uuid4
 
 from django.conf import settings
@@ -34,6 +33,7 @@ def _save_experience_thumbnail(form, experience):
         experience.thumbnail = experience.thumbnail or ""
 
     experience.save()
+
 
 def show_main(request):
     # Menyiapkan data profil untuk halaman utama.
@@ -121,6 +121,7 @@ def get_experience_json(request):
     experiences = Experience.objects.all()
     experiences_json = serializers.serialize("json", experiences)
     return HttpResponse(experiences_json, content_type="application/json")
+
 
 def show_education(request):
     # Mengambil semua data pendidikan untuk ditampilkan pada template.

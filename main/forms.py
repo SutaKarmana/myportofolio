@@ -13,6 +13,7 @@ class ExperienceForm(forms.ModelForm):
         ],
         widget=forms.RadioSelect,
         initial="url",
+
         required=False,
     )
     thumbnail_file = forms.FileField(

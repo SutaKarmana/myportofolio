@@ -5,28 +5,9 @@ NPM : 2506615993
 
 Class : PBP F
 
-## Deskripsi Proyek
+## Deskripsi Proyek (New)
 
 Proyek ini merupakan website portofolio pribadi yang dibuat menggunakan Django. Website menampilkan informasi profile, education, experience, awards, dan projects. Data pada beberapa bagian portofolio disimpan di database melalui model Django, kemudian diambil oleh view dan ditampilkan pada template. Pada bagian Education, Experience, dan Awards, pengguna dapat menambahkan, mengubah, dan menghapus data melalui form. Proyek ini juga menyediakan endpoint JSON untuk data Experience dan Project.
-
-## Setup dan Menjalankan Proyek
-
-Pastikan Python sudah terpasang, kemudian jalankan perintah berikut dari folder proyek:
-
-```bash
-python -m venv env
-env\Scripts\activate
-pip install -r requirements.txt
-python manage.py migrate
-python manage.py runserver
-```
-
-Setelah server berjalan, buka `http://127.0.0.1:8000/` pada browser. Untuk memeriksa konfigurasi dan menjalankan test, gunakan:
-
-```bash
-python manage.py check
-python manage.py test
-```
 
 #### Pertanyaan Reflektif
 
@@ -295,4 +276,4 @@ Percakapan Gemini yang saya gunakan untuk memahami konsep dan melakukan cross-ch
 `https://share.gemini.google/tGohVOMAYoNV`
 
 ## Harap dibaca (Tugas 3)
-Dikarenakan saya sudah terlanjur mengerjakannya sambilan tutorial kemarin.. ternyata ga sadar kalau refaktor semuanya itu di tugas. Jadi untuk memperlihatkan bahwa saya sudah mengerjakan progresnnya saja tandai dengan memberikan commentar. Lalu saya merefaktor semua bagian dengan tambahan button mengarah ke form masing masing. Jadi ga hanya 1 , tetapi juga ada education ,experience, dan awards.
+Dikarenakan saya sudah terlanjur mengerjakannya sambilan tutorial kemarin.. ternyata ga sadar kalau refaktor semuanya itu ada di bagian Tugas 03. Jadi untuk memperlihatkan bahwa saya sudah mengerjakan progresnnya saja tandai dengan memberikan commentar. Lalu saya merefaktor semua bagian dengan tambahan button mengarah ke form masing masing. Jadi ga hanya 1 , tetapi juga ada education ,experience, dan awards.

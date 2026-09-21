@@ -6,7 +6,10 @@
         <section class="experience-section" id="education">
             <div class="container">
                 <p class="section-kicker">Riwayat akademik</p>
-                <h1>Education</h1>
+                <div class="project-header">
+                    <h1>Education</h1>
+                    <a href="{% url 'main:create_education' %}" class="button project-add-button">Tambah Pendidikan</a>
+                </div>
 
                 <div class="education-grid">
                     <!-- Data pendidikan dikirim dari view dan ditampilkan satu per satu. -->
@@ -24,6 +27,13 @@
                                         {{ education.ended_year }}
                                     {% endif %}
                                 </p>
+                                <div class="project-actions">
+                                    <a href="{% url 'main:update_education' education.id %}" class="button">Edit</a>
+                                    <form method="post" action="{% url 'main:delete_education' education.id %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="button button-danger">Hapus</button>
+                                    </form>
+                                </div>
                             </div>
                             <div class="education-visual">
                                 <div class="education-logo-wrap">

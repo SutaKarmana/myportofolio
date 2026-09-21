@@ -1,6 +1,6 @@
 from django import forms
 
-from main.models import Experience, Project
+from main.models import Award, Education, Experience, Project
 
 
 class ExperienceForm(forms.ModelForm):
@@ -118,4 +118,61 @@ class ProjectForm(forms.ModelForm):
                     "placeholder": "https://example.com/image.jpg",
                 }
             ),
+        }
+
+
+class EducationForm(forms.ModelForm):
+    # Form untuk menambah dan mengubah data pendidikan.
+    class Meta:
+        model = Education
+        fields = [
+            "institusi",
+            "program",
+            "description",
+            "started_year",
+            "ended_year",
+            "thumbnail",
+        ]
+        labels = {
+            "institusi": "Nama Institusi",
+            "program": "Program Studi",
+            "description": "Deskripsi",
+            "started_year": "Tahun Mulai",
+            "ended_year": "Tahun Selesai",
+            "thumbnail": "Link Thumbnail",
+        }
+        widgets = {
+            "institusi": forms.TextInput(attrs={"placeholder": "Universitas Indonesia"}),
+            "program": forms.TextInput(attrs={"placeholder": "Sistem Informasi"}),
+            "description": forms.Textarea(attrs={"placeholder": "Ceritakan pendidikanmu", "rows": 4}),
+            "started_year": forms.NumberInput(attrs={"placeholder": "2023"}),
+            "ended_year": forms.NumberInput(attrs={"placeholder": "2027"}),
+            "thumbnail": forms.URLInput(attrs={"placeholder": "https://example.com/logo.jpg"}),
+        }
+
+
+class AwardForm(forms.ModelForm):
+    # Form untuk menambah dan mengubah data penghargaan.
+    class Meta:
+        model = Award
+        fields = [
+            "title",
+            "issuer",
+            "year",
+            "thumbnail",
+            "certificate_url",
+        ]
+        labels = {
+            "title": "Nama Penghargaan",
+            "issuer": "Pemberi Penghargaan",
+            "year": "Tahun",
+            "thumbnail": "Link Thumbnail",
+            "certificate_url": "Link Sertifikat",
+        }
+        widgets = {
+            "title": forms.TextInput(attrs={"placeholder": "Juara 1 Business Plan"}),
+            "issuer": forms.TextInput(attrs={"placeholder": "Nama Penyelenggara"}),
+            "year": forms.NumberInput(attrs={"placeholder": "2025"}),
+            "thumbnail": forms.URLInput(attrs={"placeholder": "https://example.com/award.jpg"}),
+            "certificate_url": forms.URLInput(attrs={"placeholder": "https://example.com/certificate.pdf"}),
         }

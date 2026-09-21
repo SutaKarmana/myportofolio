@@ -1,6 +1,7 @@
 import uuid
 from django.db import models
 
+# Menyimpan data pengalaman dan status berlangsungnya pengalaman.
 class Experience(models.Model):
     EXPERIENCE_CHOICES = [
         ('internship', 'Internship'),
@@ -25,7 +26,8 @@ class Experience(models.Model):
     def is_ongoing(self):
         return self.ended_at is None
 
-#TambahanTugas2
+#tutorial 02
+# Menyimpan riwayat pendidikan yang ditampilkan pada halaman Education.
 class Education(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     institusi = models.CharField(max_length=255)
@@ -43,6 +45,7 @@ class Education(models.Model):
         return self.ended_year is None
 
 
+# Menyimpan data penghargaan beserta penerbit dan sertifikatnya.
 class Award(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255)
@@ -57,6 +60,7 @@ class Award(models.Model):
     def __str__(self):
         return f"{self.title} ({self.year})"
 
+# Menyimpan informasi proyek dan teknologi yang digunakan.
 class Project(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     title = models.CharField(max_length=255)

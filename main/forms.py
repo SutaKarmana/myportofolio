@@ -5,6 +5,44 @@ from main.models import Experience, Project
 
 class ExperienceForm(forms.ModelForm):
     # Tugas 3: ModelForm untuk bagian Experience dengan field yang dapat diisi.
+    thumbnail_source = forms.ChoiceField(
+        label="Sumber Thumbnail",
+        choices=[
+            ("url", "Link"),
+            ("upload", "Upload file"),
+        ],
+        widget=forms.RadioSelect,
+        initial="url",
+        required=False,
+    )
+    thumbnail_file = forms.FileField(
+        label="File Thumbnail",
+        required=False,
+        widget=forms.ClearableFileInput(attrs={"accept": "image/*"}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.order_fields(
+            [
+                "title",
+                "description",
+                "category",
+                "thumbnail_source",
+                "thumbnail",
+                "thumbnail_file",
+            ]
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        source = cleaned_data.get("thumbnail_source") or "url"
+
+        if source == "upload" and not cleaned_data.get("thumbnail_file"):
+            self.add_error("thumbnail_file", "Pilih file gambar untuk di-upload.")
+
+        return cleaned_data
+
     class Meta:
         model = Experience
         fields = [
@@ -18,7 +56,7 @@ class ExperienceForm(forms.ModelForm):
             "title": "Judul Pengalaman",
             "description": "Deskripsi Pengalaman",
             "category": "Kategori",
-            "thumbnail": "URL Thumbnail",
+            "thumbnail": "Link Thumbnail",
         }
 
         widgets = {
@@ -27,10 +65,11 @@ class ExperienceForm(forms.ModelForm):
                 attrs={"placeholder": "Ceritakan pengalamanmu", "rows": 4}
             ),
             "thumbnail": forms.URLInput(
-                attrs={"placeholder": "https://example.com/logo.jpg"}
+                attrs={
+                    "placeholder": "https://example.com/gambar.jpg",
+                }
             ),
         }
-
 
 class ProjectForm(forms.ModelForm):
     class Meta:

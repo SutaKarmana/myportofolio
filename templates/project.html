@@ -44,7 +44,12 @@
                                     {% if project.project_url %}
                                         <a href="{{ project.project_url }}" class="button">Lihat Project</a>
                                     {% endif %}
-                                    {% include "components/project_delete_modal.html" with project=project %}
+                                    {% if user.is_superuser or perms.main.delete_project %}
+                                        {% include "components/project_delete_modal.html" with project=project %}
+                                    {% endif %}
+                                    {% if user.is_superuser or perms.main.change_project %}
+                                        <a href="{% url 'main:update_project' project.id %}" class="button">Edit Project</a>
+                                    {% endif %}
                                     {% include "components/project_star.html" with project=project %}
                                 </div>
                             </div>

@@ -24,6 +24,7 @@ from main.views import (
     login_user,
     logout_user,
     toggle_star,
+    toggle_like,
 )
 
 app_name = "main"
@@ -61,5 +62,10 @@ urlpatterns = [
         "projects/<uuid:project_id>/star/",
         toggle_star,
         name="toggle_star",
+    ),
+    path(
+        "awards/<uuid:award_id>/like/",
+        toggle_like,
+        name="toggle_like",
     ),
 ]

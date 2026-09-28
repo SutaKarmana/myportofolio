@@ -7,7 +7,9 @@
             <div class="container">
                 <div class="section-heading">
                     <h2>Awards</h2>
-                    <a href="{% url 'main:create_award' %}" class="button">Tambah Penghargaan</a>
+                    {% if user.is_superuser %}
+                        <a href="{% url 'main:create_award' %}" class="button">Tambah Penghargaan</a>
+                    {% endif %}
                 </div>
                 <div class="awards-grid">
                     <!-- Setiap objek Award dari database ditampilkan sebagai kartu. -->
@@ -35,10 +37,22 @@
                                     <a class="award-link" href="{{ award.certificate_url }}" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
                                 {% endif %}
                                 <div class="project-actions">
-                                    <a href="{% url 'main:update_award' award.id %}" class="button">Edit</a>
-                                    <form method="post" action="{% url 'main:delete_award' award.id %}">
+                                    {% if user.is_superuser or perms.main.change_award %}
+                                        <a href="{% url 'main:update_award' award.id %}" class="button">Edit</a>
+                                    {% endif %}
+                                    {% if user.is_superuser or perms.main.delete_award %}
+                                        <form method="post" action="{% url 'main:delete_award' award.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="button button-danger">Hapus</button>
+                                        </form>
+                                    {% endif %}
+                                    <form method="post" action="{% url 'main:toggle_like' award.id %}" class="star-form">
                                         {% csrf_token %}
-                                        <button type="submit" class="button button-danger">Hapus</button>
+                                        <button type="submit" class="button button-star{% if user in award.liked_by.all %} is-starred{% endif %}">
+                                            <span aria-hidden="true">♥</span>
+                                            {% if user in award.liked_by.all %}Unlike{% else %}Like{% endif %}
+                                            <span class="star-count">{{ award.liked_by.count }}</span>
+                                        </button>
                                     </form>
                                 </div>
                             </div>

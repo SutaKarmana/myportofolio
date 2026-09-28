@@ -108,7 +108,6 @@ def show_main(request):
         "npm": "2506615993",
         "study_program": "S1 Sistem Informasi",
         "bio": (
-            "An Information Systems student with a strong interest  "
             "An Information Systems student with a strong interest in Data Analytics, currently developing skills in Software Development and Business Development. Enthusiastic about Business Plan Competitions and Data Mining Competition."
         ),
         "last_login": last_login,
@@ -244,8 +243,11 @@ def show_awards(request):
     return render(request, "awards.html", context)
 
 
+@login_required(login_url="/login/")
 def create_award(request):
     # Memproses form untuk menambahkan penghargaan baru.
+    if not request.user.is_superuser:
+        raise PermissionDenied
     form = AwardForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -255,8 +257,11 @@ def create_award(request):
     return render(request, "award_form.html", {"name": PROFILE_NAME, "form": form})
 
 
+@login_required(login_url="/login/")
 def update_award(request, award_id):
     # Mengisi form dengan data lama untuk proses edit penghargaan.
+    if not (request.user.is_superuser or request.user.has_perm("main.change_award")):
+        raise PermissionDenied
     award = get_object_or_404(Award, pk=award_id)
     form = AwardForm(request.POST or None, instance=award)
     if request.method == "POST" and form.is_valid():
@@ -271,12 +276,15 @@ def update_award(request, award_id):
     )
 
 
+@login_required(login_url="/login/")
+@require_POST
 def delete_award(request, award_id):
     # Menghapus data penghargaan setelah tombol hapus dikirim melalui POST.
+    if not request.user.is_superuser:
+        raise PermissionDenied
     award = get_object_or_404(Award, pk=award_id)
-    if request.method == "POST":
-        award.delete()
-        messages.success(request, "Penghargaan berhasil dihapus!")
+    award.delete()
+    messages.success(request, "Penghargaan berhasil dihapus!")
     return redirect("main:show_awards")
 
 
@@ -363,3 +371,16 @@ def delete_project(request, project_id):
         return redirect("main:show_projects")
 
     return redirect("main:show_projects")
+
+
+@login_required(login_url="/login/")
+@require_POST
+def toggle_like(request, award_id):
+    award = get_object_or_404(Award, pk=award_id)
+
+    if request.user in award.liked_by.all():
+        award.liked_by.remove(request.user)
+    else:
+        award.liked_by.add(request.user)
+
+    return redirect("main:show_awards")

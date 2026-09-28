@@ -54,6 +54,9 @@ class Award(models.Model):
     year = models.PositiveIntegerField()
     thumbnail = models.URLField(blank=True, null=True)
     certificate_url = models.URLField(blank=True, null=True)
+    liked_by = models.ManyToManyField(
+        User, related_name="liked_awards", blank=True
+    )
 
     class Meta:
         ordering = ["-year", "title"]

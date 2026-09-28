@@ -364,4 +364,4 @@ Dalam prosesnya, beberapa saran AI perlu saya sesuaikan. Contohnya, akun yang di
 
 Link percakapan Gemini yang digunakan dalam pengerjaan Tugas 4:
 
-`TEMPEL_LINK_SHARE_GEMINI_DI_SINI`
+`https://share.gemini.google/z9HY9JVH69po`

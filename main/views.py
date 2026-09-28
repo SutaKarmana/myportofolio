@@ -325,6 +325,7 @@ def create_project(request):
     return render(request, "projects_form.html", context)
 
 
+@login_required(login_url="/login/")
 def update_project(request, project_id):
     if not can_edit_projects(request.user):
         raise PermissionDenied
@@ -377,16 +378,16 @@ def get_projects_json(request):
     return HttpResponse(projects_json, content_type="application/json")
 
 @login_required(login_url="/login/")
+@require_POST
 def delete_project(request, project_id):
     if not request.user.is_superuser:
         raise PermissionDenied
 
     project = get_object_or_404(Project, pk=project_id)
 
-    if request.method == "POST":
-        project.delete()
-        messages.success(request, "Project berhasil dihapus!")
-        return redirect("main:show_projects")
+    project.delete()
+    messages.success(request, "Project berhasil dihapus!")
+    return redirect("main:show_projects")
 
     return redirect("main:show_projects")
 

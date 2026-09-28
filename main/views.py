@@ -12,12 +12,19 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required  
 from django.core.exceptions import PermissionDenied       
+from django.views.decorators.http import require_POST
 
 
 from main.models import Award, Experience, Education, Project
 from main.forms import AwardForm, EducationForm, ExperienceForm, ProjectForm
 
 PROFILE_NAME = "I Nyoman Yadnya Suta Karmana"
+
+
+def can_edit_projects(user):
+    return user.is_authenticated and (
+        user.is_superuser or user.has_perm("main.change_project")
+    )
 
 #Tutorial4
 def register(request):
@@ -58,16 +65,16 @@ def logout_user(request):
 
 # Tanpa cek is_superuser: semua akun yang sudah login boleh memberi star
 @login_required(login_url="/login/")
+@require_POST
 def toggle_star(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
-    if request.method == "POST":
-        # Kalau akun ini sudah pernah memberi star, batalkan star-nya.
-        # Kalau belum, tambahkan star.
-        if request.user in project.starred_by.all():
-            project.starred_by.remove(request.user)
-        else:
-            project.starred_by.add(request.user)
+    # Kalau akun ini sudah pernah memberi star, batalkan star-nya.
+    # Kalau belum, tambahkan star.
+    if request.user in project.starred_by.all():
+        project.starred_by.remove(request.user)
+    else:
+        project.starred_by.add(request.user)
 
     return redirect("main:show_projects")
 
@@ -293,6 +300,9 @@ def create_project(request):
 
 
 def update_project(request, project_id):
+    if not can_edit_projects(request.user):
+        raise PermissionDenied
+
     project = get_object_or_404(Project, pk=project_id)
     form = ProjectForm(request.POST or None, instance=project)
 
@@ -342,6 +352,9 @@ def get_projects_json(request):
 
 @login_required(login_url="/login/")
 def delete_project(request, project_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
     project = get_object_or_404(Project, pk=project_id)
 
     if request.method == "POST":

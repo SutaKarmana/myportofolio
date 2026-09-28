@@ -71,6 +71,13 @@ class MainTest(TestCase):
         self.assertContains(response, self.experience.title)
 
     def test_education_crud(self):
+        self.client.force_login(
+            User.objects.create_superuser(
+                username="education-owner",
+                password="test-password",
+                email="education-owner@example.com",
+            )
+        )
         create_response = self.client.post(
             reverse("main:create_education"),
             {
@@ -279,6 +286,17 @@ class ProjectAuthorizationTest(TestCase):
             issuer="Issuer",
             year=2026,
         )
+        self.education = Education.objects.create(
+            institusi="University",
+            program="Information Systems",
+            description="Education record",
+            started_year=2022,
+        )
+        self.experience = Experience.objects.create(
+            title="Experience",
+            description="Experience record",
+            category="part-time",
+        )
         self.regular_user = User.objects.create_user(
             username="regular",
             password="test-password",
@@ -295,6 +313,14 @@ class ProjectAuthorizationTest(TestCase):
             ),
             Permission.objects.get(
                 codename="change_award",
+                content_type__app_label="main",
+            ),
+            Permission.objects.get(
+                codename="change_education",
+                content_type__app_label="main",
+            ),
+            Permission.objects.get(
+                codename="change_experience",
                 content_type__app_label="main",
             ),
         )
@@ -448,6 +474,122 @@ class ProjectAuthorizationTest(TestCase):
             reverse("main:delete_award", args=[self.award.id])
         )
         self.assertRedirects(delete_response, reverse("main:show_awards"))
+
+    def test_education_permissions_match_roles(self):
+        self.assertEqual(
+            self.client.get(reverse("main:show_education")).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(reverse("main:create_education")).status_code,
+            302,
+        )
+
+        self.client.force_login(self.regular_user)
+        self.assertEqual(
+            self.client.get(reverse("main:create_education")).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.get(
+                reverse("main:update_education", args=[self.education.id])
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("main:delete_education", args=[self.education.id])
+            ).status_code,
+            403,
+        )
+
+        self.client.force_login(self.editor_user)
+        self.assertEqual(
+            self.client.get(
+                reverse("main:update_education", args=[self.education.id])
+            ).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(reverse("main:create_education")).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("main:delete_education", args=[self.education.id])
+            ).status_code,
+            403,
+        )
+
+        self.client.force_login(self.owner)
+        self.assertEqual(
+            self.client.get(reverse("main:create_education")).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(
+                reverse("main:update_education", args=[self.education.id])
+            ).status_code,
+            200,
+        )
+
+    def test_experience_permissions_match_roles(self):
+        self.assertEqual(
+            self.client.get(reverse("main:show_experience")).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(reverse("main:create_experience")).status_code,
+            302,
+        )
+
+        self.client.force_login(self.regular_user)
+        self.assertEqual(
+            self.client.get(reverse("main:create_experience")).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.get(
+                reverse("main:update_experience", args=[self.experience.id])
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("main:delete_experience", args=[self.experience.id])
+            ).status_code,
+            403,
+        )
+
+        self.client.force_login(self.editor_user)
+        self.assertEqual(
+            self.client.get(
+                reverse("main:update_experience", args=[self.experience.id])
+            ).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(reverse("main:create_experience")).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("main:delete_experience", args=[self.experience.id])
+            ).status_code,
+            403,
+        )
+
+        self.client.force_login(self.owner)
+        self.assertEqual(
+            self.client.get(reverse("main:create_experience")).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(
+                reverse("main:update_experience", args=[self.experience.id])
+            ).status_code,
+            200,
+        )
 
     def test_award_like_requires_login_and_toggles_for_users(self):
         response = self.client.get(reverse("main:show_awards"))

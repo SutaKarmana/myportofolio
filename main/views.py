@@ -131,8 +131,11 @@ def show_experience(request):
     return render(request, "experience.html", context)
 
 
+@login_required(login_url="/login/")
 def create_experience(request):
     # Tugas 3: membuat data Experience menggunakan form.
+    if not request.user.is_superuser:
+        raise PermissionDenied
     form = ExperienceForm(request.POST or None, request.FILES or None)
 
     if request.method == "POST" and form.is_valid():
@@ -148,8 +151,11 @@ def create_experience(request):
     return render(request, "experience_form.html", context)
 
 
+@login_required(login_url="/login/")
 def update_experience(request, experience_id):
     # Tugas 3: memperbarui data Experience menggunakan form yang sudah terisi.
+    if not (request.user.is_superuser or request.user.has_perm("main.change_experience")):
+        raise PermissionDenied
     experience = get_object_or_404(Experience, pk=experience_id)
     form = ExperienceForm(
         request.POST or None,
@@ -171,13 +177,16 @@ def update_experience(request, experience_id):
     return render(request, "experience_form.html", context)
 
 
+@login_required(login_url="/login/")
+@require_POST
 def delete_experience(request, experience_id):
     # Tugas 3: menghapus data Experience dari tombol delete pada halaman.
+    if not request.user.is_superuser:
+        raise PermissionDenied
     experience = get_object_or_404(Experience, pk=experience_id)
 
-    if request.method == "POST":
-        experience.delete()
-        messages.success(request, "Pengalaman berhasil dihapus!")
+    experience.delete()
+    messages.success(request, "Pengalaman berhasil dihapus!")
 
     return redirect("main:show_experience")
 
@@ -198,8 +207,11 @@ def show_education(request):
     return render(request, "education.html", context)
 
 
+@login_required(login_url="/login/")
 def create_education(request):
     # Memproses form untuk menambahkan data pendidikan baru.
+    if not request.user.is_superuser:
+        raise PermissionDenied
     form = EducationForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         form.save()
@@ -209,8 +221,11 @@ def create_education(request):
     return render(request, "education_form.html", {"name": PROFILE_NAME, "form": form})
 
 
+@login_required(login_url="/login/")
 def update_education(request, education_id):
     # Mengisi form dengan data lama untuk proses edit pendidikan.
+    if not (request.user.is_superuser or request.user.has_perm("main.change_education")):
+        raise PermissionDenied
     education = get_object_or_404(Education, pk=education_id)
     form = EducationForm(request.POST or None, instance=education)
     if request.method == "POST" and form.is_valid():
@@ -225,12 +240,15 @@ def update_education(request, education_id):
     )
 
 
+@login_required(login_url="/login/")
+@require_POST
 def delete_education(request, education_id):
     # Menghapus data pendidikan setelah tombol hapus dikirim melalui POST.
+    if not request.user.is_superuser:
+        raise PermissionDenied
     education = get_object_or_404(Education, pk=education_id)
-    if request.method == "POST":
-        education.delete()
-        messages.success(request, "Pendidikan berhasil dihapus!")
+    education.delete()
+    messages.success(request, "Pendidikan berhasil dihapus!")
     return redirect("main:show_education")
 
 

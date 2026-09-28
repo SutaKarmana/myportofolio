@@ -8,7 +8,9 @@
                 <p class="section-kicker">Riwayat akademik</p>
                 <div class="project-header">
                     <h1>Education</h1>
-                    <a href="{% url 'main:create_education' %}" class="button project-add-button">Tambah Pendidikan</a>
+                    {% if user.is_superuser %}
+                        <a href="{% url 'main:create_education' %}" class="button project-add-button">Tambah Pendidikan</a>
+                    {% endif %}
                 </div>
 
                 <div class="education-grid">
@@ -28,11 +30,15 @@
                                     {% endif %}
                                 </p>
                                 <div class="project-actions">
-                                    <a href="{% url 'main:update_education' education.id %}" class="button">Edit</a>
-                                    <form method="post" action="{% url 'main:delete_education' education.id %}">
-                                        {% csrf_token %}
-                                        <button type="submit" class="button button-danger">Hapus</button>
-                                    </form>
+                                    {% if user.is_superuser or perms.main.change_education %}
+                                        <a href="{% url 'main:update_education' education.id %}" class="button">Edit</a>
+                                    {% endif %}
+                                    {% if user.is_superuser or perms.main.delete_education %}
+                                        <form method="post" action="{% url 'main:delete_education' education.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="button button-danger">Hapus</button>
+                                        </form>
+                                    {% endif %}
                                 </div>
                             </div>
                             <div class="education-visual">

@@ -1,9 +1,10 @@
+from django.contrib.auth.models import Group, Permission, User
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from main.forms import AwardForm, EducationForm, ExperienceForm
-from main.models import Award, Education, Experience
+from main.forms import AwardForm, EducationForm, ExperienceForm, ProjectForm
+from main.models import Award, Education, Experience, Project
 
 
 class MainTest(TestCase):
@@ -257,3 +258,125 @@ class MainTest(TestCase):
 
         self.assertRedirects(delete_response, reverse("main:show_awards"))
         self.assertFalse(Award.objects.filter(pk=award.id).exists())
+
+
+class ProjectAuthorizationTest(TestCase):
+    def setUp(self):
+        self.project = Project.objects.create(
+            title="Portfolio",
+            description="Website portfolio",
+            tech_stack="Django",
+        )
+        self.regular_user = User.objects.create_user(
+            username="regular",
+            password="test-password",
+        )
+        self.editor_user = User.objects.create_user(
+            username="editor",
+            password="test-password",
+        )
+        editor_group = Group.objects.create(name="Editor")
+        editor_group.permissions.add(
+            Permission.objects.get(
+                codename="change_project",
+                content_type__app_label="main",
+            )
+        )
+        self.editor_user.groups.add(editor_group)
+        self.owner = User.objects.create_superuser(
+            username="owner",
+            password="test-password",
+            email="owner@example.com",
+        )
+
+    def test_project_page_is_public_but_star_requires_login(self):
+        response = self.client.get(reverse("main:show_projects"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Star")
+
+        response = self.client.post(
+            reverse("main:toggle_star", args=[self.project.id])
+        )
+        self.assertRedirects(
+            response,
+            f"{reverse('main:login')}?next={reverse('main:toggle_star', args=[self.project.id])}",
+        )
+
+    def test_regular_user_can_star_but_cannot_change_projects(self):
+        self.client.force_login(self.regular_user)
+
+        star_response = self.client.post(
+            reverse("main:toggle_star", args=[self.project.id])
+        )
+        self.assertRedirects(star_response, reverse("main:show_projects"))
+        self.assertTrue(self.project.starred_by.filter(pk=self.regular_user.pk).exists())
+
+        self.assertEqual(
+            self.client.get(reverse("main:create_project")).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.get(
+                reverse("main:update_project", args=[self.project.id])
+            ).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("main:delete_project", args=[self.project.id])
+            ).status_code,
+            403,
+        )
+
+    def test_editor_can_edit_but_cannot_create_or_delete(self):
+        self.client.force_login(self.editor_user)
+
+        update_response = self.client.post(
+            reverse("main:update_project", args=[self.project.id]),
+            {
+                "title": "Updated Portfolio",
+                "description": "Updated description",
+                "tech_stack": "Django, Python",
+                "project_url": "",
+                "project_image_url": "",
+            },
+        )
+        self.assertRedirects(update_response, reverse("main:show_projects"))
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Updated Portfolio")
+        self.assertEqual(
+            self.client.get(reverse("main:create_project")).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(
+                reverse("main:delete_project", args=[self.project.id])
+            ).status_code,
+            403,
+        )
+
+    def test_superuser_can_create_edit_and_delete(self):
+        self.client.force_login(self.owner)
+
+        self.assertEqual(
+            self.client.get(reverse("main:create_project")).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(
+                reverse("main:update_project", args=[self.project.id])
+            ).status_code,
+            200,
+        )
+        delete_response = self.client.post(
+            reverse("main:delete_project", args=[self.project.id])
+        )
+        self.assertRedirects(delete_response, reverse("main:show_projects"))
+        self.assertFalse(Project.objects.filter(pk=self.project.id).exists())
+
+    def test_star_endpoint_accepts_only_post(self):
+        self.client.force_login(self.regular_user)
+        response = self.client.get(
+            reverse("main:toggle_star", args=[self.project.id])
+        )
+        self.assertEqual(response.status_code, 405)

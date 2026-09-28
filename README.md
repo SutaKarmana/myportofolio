@@ -277,3 +277,91 @@ Percakapan Gemini yang saya gunakan untuk memahami konsep dan melakukan cross-ch
 
 ## Harap dibaca (Tugas 3)
 Dikarenakan saya sudah terlanjur mengerjakannya sambilan tutorial kemarin.. ternyata ga sadar kalau refaktor semuanya itu ada di bagian Tugas 03. Jadi untuk memperlihatkan bahwa saya sudah mengerjakan progresnnya saja tandai dengan memberikan commentar. Lalu saya merefaktor semua bagian dengan tambahan button mengarah ke form masing masing. Jadi ga hanya 1 , tetapi juga ada education ,experience, dan awards.
+
+### TUGAS 4
+
+## Harap dibaca (Tugas 4)
+Saya menambahkan pola autentikasi dan otorisasi pada halaman Project, Awards, Education, dan Experience. Halaman-halaman tersebut tetap dapat dibaca oleh pengunjung, tetapi aksi perubahan data dibatasi berdasarkan role pengguna.
+
+## DOKUMENTASI AI Tugas 4
+
+### AI Disclosure
+
+Dalam mengerjakan Tugas 4, saya menggunakan GitHub Copilot di VS Code dan Google Gemini (Flash Extended 3.6) sebagai alat bantu belajar serta debugging. GitHub Copilot saya gunakan untuk membaca alur kode, mencari penyebab error, dan membantu menerapkan perubahan pada view, URL, template, model, serta test. Google Gemini saya gunakan untuk membantu memahami konsep autentikasi, otorisasi, group, permission, superuser, dan relasi `ManyToManyField`.
+
+Saya tetap memeriksa dan menyesuaikan setiap saran dengan struktur proyek. Kode yang diterapkan tidak langsung diterima tanpa pengujian. Saya mencoba alurnya melalui browser, membaca kembali file yang berubah, dan menjalankan pemeriksaan Django.
+
+### Bagian yang Dibantu AI
+
+AI membantu saya pada beberapa bagian berikut:
+
+- memahami perbedaan user biasa, Editor, dan superuser;
+- membatasi view create, update, dan delete menggunakan `login_required`, `PermissionDenied`, dan permission model;
+- membuat role Editor melalui Django Group dengan permission `change_project`, `change_award`, `change_education`, dan `change_experience`;
+- menentukan kondisi template untuk menampilkan atau menyembunyikan tombol sesuai hak akses;
+- memperbaiki error `NoReverseMatch` pada tombol Star karena komponen dipanggil di luar perulangan project;
+- menambahkan relasi `ManyToManyField` untuk data user yang memberi Star pada Project dan Like pada Award;
+- memastikan request toggle Star dan Like hanya menerima metode POST serta memiliki `{% csrf_token %}`;
+- menambahkan test untuk pengunjung, user biasa, Editor, dan superuser;
+- menemukan error import view yang belum terdaftar pada `main/urls.py`;
+- memperbaiki teks `A` yang tidak sengaja muncul pada form Project dan menghapus form HTML yang bersarang.
+
+### Pembuatan Role Editor
+
+Role Editor dibuat menggunakan Django Group. Group tersebut diberi permission untuk mengubah data yang boleh diedit oleh Editor. Akun pengguna kemudian dimasukkan ke Group `Editor` melalui Django Admin.
+
+Permission Editor yang digunakan adalah:
+
+- `change_project`;
+- `change_award`;
+- `change_education`;
+- `change_experience`.
+
+Superuser tetap digunakan sebagai pemilik portfolio karena hanya superuser yang dapat menambah dan menghapus data.
+
+### Contoh Prompt yang Saya Gunakan
+
+Beberapa prompt yang saya gunakan selama mengerjakan Tugas 4 antara lain:
+
+1. > Jelaskan perbedaan user biasa, Editor, dan superuser pada Django, lalu cocokkan dengan kebutuhan hak akses project saya.
+
+2. > Cek view dan template project saya. User biasa boleh memberi Star, Editor boleh mengedit, dan superuser boleh menambah serta menghapus. Pastikan validasi dilakukan di server-side.
+
+3. > Cara buat SuperUser di terminal gimana
+
+4. > Saya ingin tombol Star tetap terlihat untuk pengunjung yang belum login, tetapi ketika ditekan harus diarahkan ke login dan tidak boleh mengubah database.
+
+5. > Memang gabisa tanpa ke website django gitu?
+
+6. > Tambahkan test Django untuk membuktikan hak akses pengunjung, user biasa, Editor, dan superuser.
+
+### Verifikasi dan Debugging
+
+Saya melakukan verifikasi dengan beberapa cara:
+
+1. Membuka halaman Project, Awards, Education, dan Experience sebagai pengunjung, user biasa, Editor, dan superuser.
+2. Mencoba membuka URL create, update, dan delete secara langsung untuk memastikan pembatasan server-side tetap berjalan.
+3. Mencoba menekan Star dan Like saat belum login untuk memastikan pengguna diarahkan ke halaman login.
+4. Mencoba menekan Star atau Like kembali setelah login untuk memastikan status dapat berubah dan dibatalkan.
+5. Menjalankan perintah berikut:
+
+```bash
+python manage.py check
+python manage.py makemigrations
+python manage.py migrate
+python manage.py test
+```
+
+Pada saat dokumentasi ini dibuat, `python manage.py check` tidak menemukan masalah. Test Django mencakup akses halaman publik, pembatasan CRUD Project, Awards, Education, dan Experience, serta perilaku Star dan Like. Test juga memastikan request GET tidak digunakan untuk mengubah data dan request POST dilindungi oleh CSRF.
+
+### Refleksi Penggunaan AI
+
+AI membantu saya memahami bahwa menyembunyikan tombol di template saja tidak cukup untuk membuat fitur aman. Pemeriksaan permission tetap harus dilakukan di view karena pengguna masih dapat mencoba mengakses URL secara langsung. Saya juga memahami bahwa `login_required` digunakan untuk memastikan pengguna sudah login, sedangkan `PermissionDenied` digunakan ketika pengguna sudah login tetapi tidak memiliki hak untuk melakukan aksi tertentu.
+
+Dalam prosesnya, beberapa saran AI perlu saya sesuaikan. Contohnya, akun yang dibuat melalui halaman Register bukan otomatis superuser, sehingga tombol yang hanya ditujukan bagi pemilik portfolio tidak muncul. Selain itu, akun Editor harus dimasukkan ke Group dan diberi permission yang sesuai melalui Django Admin. Saya memeriksa hal tersebut menggunakan database, browser, dan test Django sebelum menganggap implementasi selesai.
+
+### Link Percakapan Gemini Tugas 4
+
+Link percakapan Gemini yang digunakan dalam pengerjaan Tugas 4:
+
+`TEMPEL_LINK_SHARE_GEMINI_DI_SINI`

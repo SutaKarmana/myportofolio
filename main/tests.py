@@ -223,6 +223,13 @@ class MainTest(TestCase):
         self.assertIn("year", form.errors)
 
     def test_award_crud(self):
+        self.client.force_login(
+            User.objects.create_superuser(
+                username="award-owner",
+                password="test-password",
+                email="award-owner@example.com",
+            )
+        )
         create_response = self.client.post(
             reverse("main:create_award"),
             {
@@ -267,6 +274,11 @@ class ProjectAuthorizationTest(TestCase):
             description="Website portfolio",
             tech_stack="Django",
         )
+        self.award = Award.objects.create(
+            title="Award",
+            issuer="Issuer",
+            year=2026,
+        )
         self.regular_user = User.objects.create_user(
             username="regular",
             password="test-password",
@@ -280,7 +292,11 @@ class ProjectAuthorizationTest(TestCase):
             Permission.objects.get(
                 codename="change_project",
                 content_type__app_label="main",
-            )
+            ),
+            Permission.objects.get(
+                codename="change_award",
+                content_type__app_label="main",
+            ),
         )
         self.editor_user.groups.add(editor_group)
         self.owner = User.objects.create_superuser(
@@ -380,3 +396,77 @@ class ProjectAuthorizationTest(TestCase):
             reverse("main:toggle_star", args=[self.project.id])
         )
         self.assertEqual(response.status_code, 405)
+
+    def test_award_permissions_match_roles(self):
+        self.assertEqual(
+            self.client.get(reverse("main:show_awards")).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(reverse("main:create_award")).status_code,
+            302,
+        )
+
+        self.client.force_login(self.regular_user)
+        self.assertEqual(
+            self.client.get(reverse("main:create_award")).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.get(reverse("main:update_award", args=[self.award.id])).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(reverse("main:delete_award", args=[self.award.id])).status_code,
+            403,
+        )
+
+        self.client.force_login(self.editor_user)
+        self.assertEqual(
+            self.client.get(reverse("main:update_award", args=[self.award.id])).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(reverse("main:create_award")).status_code,
+            403,
+        )
+        self.assertEqual(
+            self.client.post(reverse("main:delete_award", args=[self.award.id])).status_code,
+            403,
+        )
+
+        self.client.force_login(self.owner)
+        self.assertEqual(
+            self.client.get(reverse("main:create_award")).status_code,
+            200,
+        )
+        self.assertEqual(
+            self.client.get(reverse("main:update_award", args=[self.award.id])).status_code,
+            200,
+        )
+        delete_response = self.client.post(
+            reverse("main:delete_award", args=[self.award.id])
+        )
+        self.assertRedirects(delete_response, reverse("main:show_awards"))
+
+    def test_award_like_requires_login_and_toggles_for_users(self):
+        response = self.client.get(reverse("main:show_awards"))
+        self.assertContains(response, "Like")
+
+        like_url = reverse("main:toggle_like", args=[self.award.id])
+        response = self.client.post(like_url)
+        self.assertRedirects(
+            response,
+            f"{reverse('main:login')}?next={like_url}",
+        )
+
+        self.client.force_login(self.regular_user)
+        response = self.client.post(like_url)
+        self.assertRedirects(response, reverse("main:show_awards"))
+        self.assertTrue(self.award.liked_by.filter(pk=self.regular_user.pk).exists())
+
+        response = self.client.post(like_url)
+        self.assertRedirects(response, reverse("main:show_awards"))
+        self.assertFalse(self.award.liked_by.filter(pk=self.regular_user.pk).exists())
+
+        self.assertEqual(self.client.get(like_url).status_code, 405)

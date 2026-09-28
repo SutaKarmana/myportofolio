@@ -7,10 +7,12 @@
                 <p class="section-kicker">Tempat saya mengasah keahlian</p>
                 <div class="project-header">
                     <h1>Experience</h1>
-                    <a href="{% url 'main:create_experience' %}" class="button project-add-button">
-                        <span aria-hidden="true">+</span>
-                        Tambah Pengalaman
-                    </a>
+                    {% if user.is_superuser %}
+                        <a href="{% url 'main:create_experience' %}" class="button project-add-button">
+                            <span aria-hidden="true">+</span>
+                            Tambah Pengalaman
+                        </a>
+                    {% endif %}
                 </div>
 
                 <div class="experience-grid">
@@ -35,11 +37,15 @@
 
                                     <p>{{ experience.description|linebreaksbr }}</p>
                                     <div class="project-actions">
-                                        <a href="{% url 'main:update_experience' experience.id %}" class="button">Edit</a>
-                                        <form method="post" action="{% url 'main:delete_experience' experience.id %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="button button-danger">Hapus</button>
-                                        </form>
+                                        {% if user.is_superuser or perms.main.change_experience %}
+                                            <a href="{% url 'main:update_experience' experience.id %}" class="button">Edit</a>
+                                        {% endif %}
+                                        {% if user.is_superuser or perms.main.delete_experience %}
+                                            <form method="post" action="{% url 'main:delete_experience' experience.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="button button-danger">Hapus</button>
+                                            </form>
+                                        {% endif %}
                                     </div>
                                 </div>
 

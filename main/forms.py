@@ -1,7 +1,9 @@
 from django import forms
 
-from main.models import Award, Education, Experience, Project
+from django.core.exceptions import ValidationError
+from django.utils.html import strip_tags
 
+from main.models import Award, Education, Experience, Project
 
 class ExperienceForm(forms.ModelForm):
     # Tugas 3: ModelForm untuk bagian Experience dengan field yang dapat diisi.
@@ -120,6 +122,29 @@ class ProjectForm(forms.ModelForm):
                 }
             ),
         }
+    def clean_title(self):
+        title = strip_tags(self.cleaned_data["title"]).strip()
+        if not title:
+            raise ValidationError("Nama proyek tidak boleh hanya berisi tag HTML.")
+        return title
+
+    def clean_tech_stack(self):
+        return strip_tags(self.cleaned_data["tech_stack"]).strip()
+
+    def clean_description(self):
+        return strip_tags(self.cleaned_data["description"]).strip()
+
+    def _clean_safe_url(self, field_name):
+        value = self.cleaned_data.get(field_name)
+        if value and not value.lower().startswith(("http://", "https://")):
+            raise ValidationError("URL harus menggunakan http:// atau https://.")
+        return value
+
+    def clean_project_url(self):
+        return self._clean_safe_url("project_url")
+
+    def clean_project_image_url(self):
+        return self._clean_safe_url("project_image_url")
 
 
 class EducationForm(forms.ModelForm):

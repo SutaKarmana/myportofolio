@@ -331,6 +331,31 @@ class ProjectAuthorizationTest(TestCase):
             email="owner@example.com",
         )
 
+    def test_superuser_project_page_renders_add_modal_and_form(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("main:show_projects"))
+
+        self.assertContains(response, 'popovertarget="add-project-modal"')
+        self.assertContains(response, 'id="add-project-modal"')
+        self.assertContains(response, 'id="project-form"')
+        self.assertContains(response, 'name="title"')
+
+    def test_superuser_can_add_project_via_ajax(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(
+            reverse("main:create_project_ajax"),
+            {
+                "title": "New project",
+                "description": "Built with Django",
+                "tech_stack": "Django",
+                "project_url": "",
+                "project_image_url": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(Project.objects.filter(title="New project").exists())
+
     def test_project_page_is_public_but_star_requires_login(self):
         response = self.client.get(reverse("main:show_projects"))
         self.assertEqual(response.status_code, 200)

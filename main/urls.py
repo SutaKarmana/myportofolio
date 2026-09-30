@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib import admin
 from main.views import (
+    create_project_ajax,
     show_awards,
     show_main,
     show_experience,
@@ -68,4 +69,5 @@ urlpatterns = [
         toggle_like,
         name="toggle_like",
     ),
+    path("projects/add-ajax/", create_project_ajax, name="create_project_ajax"),
 ]

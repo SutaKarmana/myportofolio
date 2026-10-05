@@ -4,14 +4,11 @@ import datetime
 
 from django.conf import settings
 from django.contrib import messages
-from django.core import serializers
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.shortcuts import redirect, render
-from django.contrib.auth.decorators import login_required  
-from django.core.exceptions import PermissionDenied       
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.urls import reverse
@@ -22,10 +19,9 @@ from main.forms import AwardForm, EducationForm, ExperienceForm, ProjectForm
 PROFILE_NAME = "I Nyoman Yadnya Suta Karmana"
 
 
-@login_required(login_url="/login/")
 @require_POST
 def create_project_ajax(request):
-    if not request.user.is_superuser:
+    if not request.user.is_authenticated or not request.user.is_superuser:
         return JsonResponse(
             {"message": "Hanya pemilik portofolio yang dapat menambahkan proyek."},
             status=403,
@@ -136,19 +132,7 @@ def show_main(request):
 
 
 def show_experience(request):
-    # Tugas 3: mengambil data dalam format JSON
-    json_response = get_experience_json(request)
-    experiences = serializers.deserialize(
-        "json",
-        json_response.content.decode("utf-8"),
-    )
-    experiences = [experience.object for experience in experiences]
-
-    context = {
-        "name": PROFILE_NAME,
-        "experience_list": experiences,
-    }
-    return render(request, "experience.html", context)
+    return render(request, "experience.html", {"name": PROFILE_NAME, "form": ExperienceForm()})
 
 
 @login_required(login_url="/login/")
@@ -212,19 +196,25 @@ def delete_experience(request, experience_id):
 
 
 def get_experience_json(request):
-    # Tugas 3: menyediakan data Experience dalam format JSON.
-    experiences = Experience.objects.all()
-    experiences_json = serializers.serialize("json", experiences)
-    return HttpResponse(experiences_json, content_type="application/json")
+    query = request.GET.get("q", "").strip()
+    records = Experience.objects.order_by("-started_at")
+    if query:
+        records = records.filter(title__icontains=query)
+    data = []
+    for record in records:
+        item = {
+            "id": str(record.id), "title": record.title, "description": record.description,
+            "category": record.get_category_display(), "thumbnail": record.thumbnail or "",
+            "started_at": record.started_at.isoformat(),
+            "ended_at": record.ended_at.isoformat() if record.ended_at else None,
+        }
+        item.update(_record_urls(record, "experience"))
+        data.append(item)
+    return JsonResponse({"items": data})
 
 
 def show_education(request):
-    # Mengambil semua data pendidikan untuk ditampilkan pada template.
-    context = {
-        "name": PROFILE_NAME,
-        "education_list": Education.objects.all(),
-    }
-    return render(request, "education.html", context)
+    return render(request, "education.html", {"name": PROFILE_NAME, "form": EducationForm()})
 
 
 @login_required(login_url="/login/")
@@ -273,7 +263,7 @@ def delete_education(request, education_id):
 
 
 def show_awards(request):
-    # Mengambil data penghargaan sesuai urutan dari model.
+    # Halaman hanya merender kerangka; data diminta lewat endpoint JSON.
     context = {
         "name": PROFILE_NAME,
         "form": AwardForm(),
@@ -416,8 +406,6 @@ def show_projects(request):
     return render(request, "project.html", context)
 
 
-from django.http import JsonResponse
-
 #Tutorial 5
 def get_projects_json(request):
     title_query = request.GET.get("title", "").strip()
@@ -461,17 +449,64 @@ def delete_project(request, project_id):
     messages.success(request, "Project berhasil dihapus!")
     return redirect("main:show_projects")
 
-    return redirect("main:show_projects")
 
-
-@login_required(login_url="/login/")
 @require_POST
+@login_required(login_url="/login/")
 def toggle_like(request, award_id):
     award = get_object_or_404(Award, pk=award_id)
-
-    if request.user in award.liked_by.all():
+    if award.liked_by.filter(pk=request.user.pk).exists():
         award.liked_by.remove(request.user)
     else:
         award.liked_by.add(request.user)
-
     return redirect("main:show_awards")
+
+
+
+def _record_urls(record, section):
+    """Alamat edit dan hapus untuk kartu Education atau Experience."""
+    return {
+        "edit_url": reverse(f"main:update_{section}", args=[record.id]),
+        "delete_url": reverse(f"main:delete_{section}", args=[record.id]),
+    }
+
+
+def get_education_json(request):
+    query = request.GET.get("q", "").strip()
+    records = Education.objects.order_by("-started_year", "institusi")
+    if query:
+        records = records.filter(institusi__icontains=query)
+    data = []
+    for record in records:
+        item = {
+            "id": str(record.id), "institusi": record.institusi, "program": record.program,
+            "description": record.description, "started_year": record.started_year,
+            "ended_year": record.ended_year, "thumbnail": record.thumbnail or "",
+        }
+        item.update(_record_urls(record, "education"))
+        data.append(item)
+    return JsonResponse({"items": data})
+
+
+def _create_record_ajax(request, form_class, upload=False):
+    """Semua endpoint tambah AJAX memeriksa role dan membalas 201/400/403."""
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return JsonResponse({"message": "Hanya pemilik portofolio dapat menambah data."}, status=403)
+    form = form_class(request.POST, request.FILES if upload else None)
+    if not form.is_valid():
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+    record = form.save(commit=False)
+    if upload:
+        _save_experience_thumbnail(form, record)
+    else:
+        record.save()
+    return JsonResponse({"message": "Data berhasil ditambahkan.", "id": str(record.id)}, status=201)
+
+
+@require_POST
+def create_education_ajax(request):
+    return _create_record_ajax(request, EducationForm)
+
+
+@require_POST
+def create_experience_ajax(request):
+    return _create_record_ajax(request, ExperienceForm, upload=True)

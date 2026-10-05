@@ -1,5 +1,5 @@
 from django.contrib.auth.models import Group, Permission, User
-from django.test import TestCase
+from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
@@ -38,17 +38,20 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "experience.html")
-        self.assertContains(response, self.experience.title)
-        self.assertContains(response, self.experience.description)
-        self.assertContains(response, "Part-Time")
-        self.assertContains(response, "Present")
+        self.assertNotContains(response, self.experience.title)
+        data = self.client.get(reverse("main:get_experience_json")).json()["items"][0]
+        self.assertEqual(data["title"], self.experience.title)
+        self.assertEqual(data["description"], self.experience.description)
+        self.assertEqual(data["category"], "Part-Time")
+        self.assertIsNone(data["ended_at"])
         self.assertContains(response, f'href="{reverse("main:show_main")}"')
 
     def test_empty_experience_page(self):
         Experience.objects.all().delete()
         response = self.client.get(reverse("main:show_experience"))
 
-        self.assertContains(response, "Belum ada pengalaman yang ditambahkan.")
+        self.assertContains(response, "Memuat data")
+        self.assertEqual(self.client.get(reverse("main:get_experience_json")).json()["items"], [])
 
     def test_experience_form_requires_uploaded_thumbnail(self):
         form = ExperienceForm(
@@ -140,15 +143,18 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "education.html")
-        self.assertContains(response, education.institusi)
-        self.assertContains(response, education.program)
-        self.assertContains(response, education.description)
-        self.assertContains(response, "Sekarang")
+        self.assertNotContains(response, education.description)
+        data = self.client.get(reverse("main:get_education_json")).json()["items"][0]
+        self.assertEqual(data["institusi"], education.institusi)
+        self.assertEqual(data["program"], education.program)
+        self.assertEqual(data["description"], education.description)
+        self.assertIsNone(data["ended_year"])
 
     def test_empty_education_page(self):
         response = self.client.get(reverse("main:show_education"))
 
-        self.assertContains(response, "Belum ada riwayat pendidikan yang ditambahkan.")
+        self.assertContains(response, "Memuat data")
+        self.assertEqual(self.client.get(reverse("main:get_education_json")).json()["items"], [])
 
     def test_completed_experience(self):
         self.experience.ended_at = timezone.now()
@@ -156,8 +162,8 @@ class MainTest(TestCase):
         response = self.client.get(reverse("main:show_experience"))
 
         self.assertFalse(self.experience.is_ongoing)
-        self.assertContains(response, self.experience.ended_at.strftime("%B %Y"))
-        self.assertNotContains(response, "Present")
+        data = self.client.get(reverse("main:get_experience_json")).json()["items"][0]
+        self.assertEqual(data["ended_at"], self.experience.ended_at.isoformat())
 
     def test_award_model(self):
         award = Award.objects.create(
@@ -215,7 +221,7 @@ class MainTest(TestCase):
     def test_empty_awards_page(self):
         response = self.client.get(reverse("main:show_awards"))
 
-        self.assertContains(response, "Memuat penghargaan")
+        self.assertContains(response, "Memuat data")
         self.assertEqual(self.client.get(reverse("main:get_awards_json")).json()["awards"], [])
 
     def test_award_form_validates_year(self):
@@ -621,7 +627,7 @@ class ProjectAuthorizationTest(TestCase):
 
     def test_award_like_requires_login_and_toggles_for_users(self):
         response = self.client.get(reverse("main:show_awards"))
-        self.assertContains(response, 'id="award-grid"')
+        self.assertContains(response, 'id="grid"')
         data = self.client.get(reverse("main:get_awards_json")).json()["awards"][0]
         self.assertFalse(data["is_liked"])
 
@@ -642,3 +648,96 @@ class ProjectAuthorizationTest(TestCase):
         self.assertFalse(self.award.liked_by.filter(pk=self.regular_user.pk).exists())
 
         self.assertEqual(self.client.get(like_url).status_code, 405)
+
+    def test_ajax_creation_checks_all_roles_and_http_status(self):
+        cases = [
+            ("create_project_ajax", {"title": "New", "description": "Description", "tech_stack": "Django"}, Project),
+            ("create_award_ajax", {"title": "New", "issuer": "UI", "year": 2026}, Award),
+            ("create_education_ajax", {"institusi": "New", "program": "SI", "description": "Description", "started_year": 2026}, Education),
+            ("create_experience_ajax", {"title": "New", "description": "Description", "category": "research"}, Experience),
+        ]
+        for route, payload, model in cases:
+            url = reverse(f"main:{route}")
+            for user in (None, self.regular_user, self.editor_user):
+                self.client.logout()
+                if user:
+                    self.client.force_login(user)
+                before = model.objects.count()
+                response = self.client.post(url, payload)
+                self.assertEqual(response.status_code, 403, route)
+                self.assertIn("message", response.json())
+                self.assertEqual(model.objects.count(), before)
+            self.client.force_login(self.owner)
+            self.assertEqual(self.client.get(url).status_code, 405)
+            self.assertEqual(self.client.post(url, {}).status_code, 400)
+            before = model.objects.count()
+            response = self.client.post(url, payload)
+            self.assertEqual(response.status_code, 201, route)
+            self.assertEqual(model.objects.count(), before + 1)
+
+    def test_ajax_csrf_token_required_on_every_add_endpoint(self):
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.owner)
+        for section, route, payload in [
+            ("projects", "project", {"title": "CSRF", "description": "Description", "tech_stack": "Django"}),
+            ("awards", "award", {"title": "CSRF", "issuer": "UI", "year": 2026}),
+            ("education", "education", {"institusi": "CSRF", "program": "SI", "description": "Description", "started_year": 2026}),
+            ("experience", "experience", {"title": "CSRF", "description": "Description", "category": "research"}),
+        ]:
+            url = reverse(f"main:create_{route}_ajax")
+            self.assertEqual(client.post(url, payload).status_code, 403)
+            client.get(reverse(f"main:show_{section}"))
+            token = client.cookies["csrftoken"].value
+            self.assertEqual(client.post(url, payload, HTTP_X_CSRFTOKEN=token).status_code, 201)
+
+    def test_ajax_search_without_unused_star_data(self):
+        for section, record in [("education", self.education), ("experience", self.experience)]:
+            url = reverse(f"main:get_{section}_json")
+            self.assertEqual(self.client.get(url, {"q": "no-match"}).json()["items"], [])
+            # Tanpa relasi Star, daftar hanya membutuhkan satu query database.
+            with self.assertNumQueries(1):
+                item = self.client.get(url).json()["items"][0]
+            self.assertEqual(item["id"], str(record.id))
+            for field in ("star_count", "is_starred", "reaction_url"):
+                self.assertNotIn(field, item)
+            self.assertEqual(item["edit_url"], reverse(f"main:update_{section}", args=[record.id]))
+            self.assertEqual(item["delete_url"], reverse(f"main:delete_{section}", args=[record.id]))
+
+    def test_form_sanitizes_text_and_rejects_xss_only_values(self):
+        payloads = [
+            (ProjectForm, {"title": "New", "description": "Description", "tech_stack": "Django"}, ("title", "description", "tech_stack")),
+            (AwardForm, {"title": "New", "issuer": "UI", "year": 2026}, ("title", "issuer")),
+            (EducationForm, {"institusi": "UI", "program": "SI", "description": "Description", "started_year": 2026}, ("institusi", "program", "description")),
+            (ExperienceForm, {"title": "New", "description": "Description", "category": "research"}, ("title", "description")),
+        ]
+        for form_class, payload, fields in payloads:
+            for field in fields:
+                form = form_class({**payload, field: '<img src="x" onerror="alert(1)">'})
+                self.assertFalse(form.is_valid(), (form_class, field))
+                self.assertIn(field, form.errors)
+                form = form_class({**payload, field: '<b>Teks aman</b>'})
+                self.assertTrue(form.is_valid(), form.errors)
+                self.assertEqual(form.cleaned_data[field], "Teks aman")
+
+    def test_validation_rejects_unsafe_urls_and_inconsistent_years(self):
+        education = EducationForm({"institusi": "UI", "program": "SI", "description": "Text", "started_year": 2026, "ended_year": 2025})
+        self.assertFalse(education.is_valid())
+        self.assertIn("ended_year", education.errors)
+        award = AwardForm({"title": "Award", "issuer": "UI", "year": 2026, "certificate_url": "javascript:alert(1)"})
+        self.assertFalse(award.is_valid())
+        self.assertIn("certificate_url", award.errors)
+
+    def test_like_and_delete_keep_role_restrictions(self):
+        self.client.force_login(self.regular_user)
+        like_url = reverse("main:toggle_like", args=[self.award.id])
+        self.assertRedirects(self.client.post(like_url), reverse("main:show_awards"))
+        self.assertTrue(self.award.liked_by.filter(pk=self.regular_user.pk).exists())
+        for model, record, section in [(Award, self.award, "award"), (Education, self.education, "education"), (Experience, self.experience, "experience")]:
+            url = reverse(f"main:delete_{section}", args=[record.id])
+            response = self.client.post(url)
+            self.assertEqual(response.status_code, 403)
+            self.assertTrue(model.objects.filter(pk=record.id).exists())
+            self.client.force_login(self.owner)
+            self.assertEqual(self.client.post(url).status_code, 302)
+            self.assertFalse(model.objects.filter(pk=record.id).exists())
+            self.client.force_login(self.regular_user)

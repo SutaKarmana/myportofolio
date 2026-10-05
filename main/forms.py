@@ -178,6 +178,30 @@ class EducationForm(forms.ModelForm):
 
 
 class AwardForm(forms.ModelForm):
+    def clean_title(self):
+        value = strip_tags(self.cleaned_data["title"]).strip()
+        if not value:
+            raise ValidationError("Nama penghargaan tidak boleh kosong atau hanya berisi HTML.")
+        return value
+
+    def clean_issuer(self):
+        value = strip_tags(self.cleaned_data["issuer"]).strip()
+        if not value:
+            raise ValidationError("Pemberi penghargaan tidak boleh kosong atau hanya berisi HTML.")
+        return value
+
+    def _clean_safe_url(self, field):
+        value = self.cleaned_data.get(field)
+        if value and not value.lower().startswith(("https://", "http://")):
+            raise ValidationError("URL harus menggunakan http:// atau https://.")
+        return value
+
+    def clean_thumbnail(self):
+        return self._clean_safe_url("thumbnail")
+
+    def clean_certificate_url(self):
+        return self._clean_safe_url("certificate_url")
+
     # Form untuk menambah dan mengubah data penghargaan.
     class Meta:
         model = Award

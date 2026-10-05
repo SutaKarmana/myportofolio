@@ -1,68 +1,46 @@
-<!-- refaktor dengan extend Base.html -->
-{% extends 'base.html' %}
-
+﻿{% extends 'base.html' %}
+{% load static %}
 {% block content %}
-    <main>
-        <section class="section" id="awards">
-            <div class="container">
-                <div class="section-heading">
-                    <h2>Awards</h2>
-                    {% if user.is_superuser %}
-                        <a href="{% url 'main:create_award' %}" class="button">Tambah Penghargaan</a>
-                    {% endif %}
+<main><section class="section" id="awards"><div class="container">
+    <div class="section-heading">
+        <h2>Awards</h2>
+        {% if user.is_superuser %}<button class="button" popovertarget="add-award-modal">Tambah Penghargaan</button>{% endif %}
+    </div>
+    <form id="award-search-form" class="project-search" role="search" aria-label="Pencarian penghargaan">
+        <input type="search"
+               id="award-search"
+               name="q"
+               placeholder="Cari berdasarkan nama penghargaan"
+               class="project-search__input"
+               aria-label="Cari berdasarkan nama penghargaan">
+        <button type="submit" class="button">Cari</button>
+    </form>
+    <div id="award-app" data-endpoint="{% url 'main:get_awards_json' %}"
+         data-can-edit="{% if user.is_superuser or perms.main.change_award %}true{% else %}false{% endif %}"
+         data-can-delete="{{ user.is_superuser|yesno:'true,false' }}">
+        <form id="award-csrf" hidden>{% csrf_token %}</form>
+        <p id="award-status" role="status" aria-live="polite">Memuat penghargaan…</p>
+        <div id="award-grid" class="awards-grid"></div>
+    </div>
+    {% if user.is_superuser %}
+    <div id="add-award-modal" class="project-form-modal" popover="auto" role="dialog" aria-labelledby="award-modal-title">
+        <button class="project-form-modal__backdrop" popovertarget="add-award-modal" popovertargetaction="hide" aria-label="Tutup"></button>
+        <div class="project-form-modal__content">
+            <h2 id="award-modal-title">Tambah Penghargaan</h2>
+            <form id="award-form" method="post" action="{% url 'main:create_award_ajax' %}" class="project-form">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="form-group"><label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}</div>
+                {% endfor %}
+                <p id="award-form-errors" role="alert"></p>
+                <div class="project-form-modal__actions">
+                    <button type="button" class="button button-secondary" popovertarget="add-award-modal" popovertargetaction="hide">Batal</button>
+                    <button type="submit" class="button">Simpan</button>
                 </div>
-                <div class="awards-grid">
-                    <!-- Setiap objek Award dari database ditampilkan sebagai kartu. -->
-                    {% for award in award_list %}
-                        <article class="award-card" data-aos="fade-up">
-                            {% if award.certificate_url %}
-                                <a class="award-preview" href="{{ award.certificate_url }}" target="_blank" rel="noopener">
-                            {% else %}
-                                <div class="award-preview">
-                            {% endif %}
-                                    {% if award.thumbnail %}
-                                        <img src="{{ award.thumbnail }}" alt="Preview of {{ award.title }} certificate">
-                                    {% endif %}
-                                    <span class="award-file-label">{% if award.certificate_url %}Open PDF{% else %}Award{% endif %}</span>
-                            {% if award.certificate_url %}
-                                </a>
-                            {% else %}
-                                </div>
-                            {% endif %}
-                            <div class="award-body">
-                                <p class="award-year">{{ award.year }}</p>
-                                <h3>{{ award.title }}</h3>
-                                <p class="award-issuer">{{ award.issuer }}</p>
-                                {% if award.certificate_url %}
-                                    <a class="award-link" href="{{ award.certificate_url }}" target="_blank" rel="noopener">View certificate <span aria-hidden="true">&rarr;</span></a>
-                                {% endif %}
-                                <div class="project-actions">
-                                    {% if user.is_superuser or perms.main.change_award %}
-                                        <a href="{% url 'main:update_award' award.id %}" class="button">Edit</a>
-                                    {% endif %}
-                                    {% if user.is_superuser or perms.main.delete_award %}
-                                        <form method="post" action="{% url 'main:delete_award' award.id %}">
-                                            {% csrf_token %}
-                                            <button type="submit" class="button button-danger">Hapus</button>
-                                        </form>
-                                    {% endif %}
-                                    <form method="post" action="{% url 'main:toggle_like' award.id %}" class="star-form">
-                                        {% csrf_token %}
-                                        <button type="submit" class="button button-star{% if user in award.liked_by.all %} is-starred{% endif %}">
-                                            <span aria-hidden="true">♥</span>
-                                            {% if user in award.liked_by.all %}Unlike{% else %}Like{% endif %}
-                                            <span class="star-count">{{ award.liked_by.count }}</span>
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </article>
-                    {% empty %}
-                        <!-- Pesan kondisi kosong jika belum ada penghargaan. -->
-                        <p>Belum ada penghargaan yang ditambahkan.</p>
-                    {% endfor %}
-                </div>
-            </div>
-        </section>
-    </main>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+</div></section></main>
+<script src="{% static 'js/awards.js' %}?v=2" defer></script>
 {% endblock content %}

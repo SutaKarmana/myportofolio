@@ -3,6 +3,8 @@ from django.contrib import admin
 from main.views import (
     create_project_ajax,
     show_awards,
+    get_awards_json,
+    create_award_ajax,
     show_main,
     show_experience,
     create_experience,
@@ -45,6 +47,8 @@ urlpatterns = [
     path("education/<uuid:education_id>/edit/", update_education, name="update_education"),
     path("education/<uuid:education_id>/delete/", delete_education, name="delete_education"),
     path("awards/", show_awards, name="show_awards"),
+    path("api/awards/", get_awards_json, name="get_awards_json"),
+    path("awards/add-ajax/", create_award_ajax, name="create_award_ajax"),
     path("awards/add/", create_award, name="create_award"),
     path("awards/<uuid:award_id>/edit/", update_award, name="update_award"),
     path("awards/<uuid:award_id>/delete/", delete_award, name="delete_award"),

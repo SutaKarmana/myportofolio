@@ -189,10 +189,12 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "awards.html")
-        self.assertContains(response, award.title)
-        self.assertContains(response, award.issuer)
-        self.assertContains(response, award.thumbnail)
-        self.assertContains(response, award.certificate_url)
+        self.assertNotContains(response, award.title)
+        data = self.client.get(reverse("main:get_awards_json")).json()["awards"][0]
+        self.assertEqual(data["title"], award.title)
+        self.assertEqual(data["issuer"], award.issuer)
+        self.assertEqual(data["thumbnail"], award.thumbnail)
+        self.assertEqual(data["certificate_url"], award.certificate_url)
 
     def test_awards_are_ordered_by_year(self):
         older_award = Award.objects.create(
@@ -213,7 +215,8 @@ class MainTest(TestCase):
     def test_empty_awards_page(self):
         response = self.client.get(reverse("main:show_awards"))
 
-        self.assertContains(response, "Belum ada penghargaan yang ditambahkan.")
+        self.assertContains(response, "Memuat penghargaan")
+        self.assertEqual(self.client.get(reverse("main:get_awards_json")).json()["awards"], [])
 
     def test_award_form_validates_year(self):
         form = AwardForm(
@@ -618,7 +621,9 @@ class ProjectAuthorizationTest(TestCase):
 
     def test_award_like_requires_login_and_toggles_for_users(self):
         response = self.client.get(reverse("main:show_awards"))
-        self.assertContains(response, "Like")
+        self.assertContains(response, 'id="award-grid"')
+        data = self.client.get(reverse("main:get_awards_json")).json()["awards"][0]
+        self.assertFalse(data["is_liked"])
 
         like_url = reverse("main:toggle_like", args=[self.award.id])
         response = self.client.post(like_url)

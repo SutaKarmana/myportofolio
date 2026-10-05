@@ -56,7 +56,7 @@ def register(request):
         return redirect("main:login")
 
     context = {
-        "name": "Burhan",
+        "name": PROFILE_NAME,
         "form": form,
     }
     return render(request, "register.html", context)
@@ -72,7 +72,7 @@ def login_user(request):
         return response
 
     context = {
-        "name": "Burhan",
+        "name": PROFILE_NAME,
         "form": form,
     }
     return render(request, "login.html", context)
@@ -409,7 +409,7 @@ def show_projects(request):
     title_query = request.GET.get("title", "").strip()
 
     context = {
-        "name": "Burhan",
+        "name": PROFILE_NAME,
         "title_query": title_query,
         "form": ProjectForm(),
     }

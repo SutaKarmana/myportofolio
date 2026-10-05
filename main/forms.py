@@ -7,6 +7,7 @@ from main.models import Award, Education, Experience, Project
 
 class ExperienceForm(forms.ModelForm):
     def _clean_text(self, field):
+        # Bersihkan tag HTML dan tolak isian yang menjadi kosong setelah dibersihkan.
         value = strip_tags(self.cleaned_data[field]).strip()
         if not value:
             raise ValidationError("Isian tidak boleh kosong atau hanya berisi tag HTML.")
@@ -56,6 +57,7 @@ class ExperienceForm(forms.ModelForm):
         )
 
     def clean_thumbnail_file(self):
+        # Periksa isi awal file, ekstensi, dan ukuran; jangan hanya percaya nama file.
         file = self.cleaned_data.get("thumbnail_file")
         if file:
             header = file.read(12)
@@ -212,6 +214,7 @@ class EducationForm(forms.ModelForm):
         return value
 
     def clean(self):
+        # Validasi hubungan antarfield dilakukan setelah masing-masing field dibersihkan.
         data = super().clean()
         start, end = data.get("started_year"), data.get("ended_year")
         if start is not None and end is not None and end < start:

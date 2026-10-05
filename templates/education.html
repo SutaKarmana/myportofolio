@@ -163,17 +163,20 @@
     }
 
     if (educationForm) {
+        // Form hanya tersedia untuk superuser; pengunjung tetap bisa memuat daftar.
         educationForm.addEventListener('submit', addEducation);
     }
 
     // Fetch data education
     async function fetchEducation(searchQuery = "") {
+        // Batalkan request lama agar responsnya tidak menggantikan hasil pencarian baru.
         if (educationAbortController) educationAbortController.abort();
         educationAbortController = new AbortController();
 
         try {
             displayPageSection({ showLoading: true });
 
+            // Kirim kata pencarian dan status dalam satu request dengan encoding URL.
             const params = new URLSearchParams({q: searchQuery, status: statusFilter.value});
             const url = `${BASE_EDUCATION_ENDPOINT}?${params}`;
 

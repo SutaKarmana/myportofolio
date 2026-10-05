@@ -14,6 +14,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied       
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
+from django.urls import reverse
 
 from main.models import Award, Experience, Education, Project
 from main.forms import AwardForm, EducationForm, ExperienceForm, ProjectForm
@@ -275,9 +276,47 @@ def show_awards(request):
     # Mengambil data penghargaan sesuai urutan dari model.
     context = {
         "name": PROFILE_NAME,
-        "award_list": Award.objects.all(),
+        "form": AwardForm(),
     }
     return render(request, "awards.html", context)
+
+
+@require_POST
+def create_award_ajax(request):
+    # Jangan memakai login_required di sini: AJAX perlu JSON 403, bukan redirect HTML.
+    if not request.user.is_authenticated or not request.user.is_superuser:
+        return JsonResponse({"message": "Hanya pemilik portofolio dapat menambah penghargaan."}, status=403)
+    form = AwardForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+    award = form.save()
+    return JsonResponse({"message": "Penghargaan berhasil ditambahkan.", "id": str(award.id)}, status=201)
+
+
+def get_awards_json(request):
+    # Endpoint publik: browser meminta data, lalu Django membalas JSON.
+    query = request.GET.get("q", "").strip()
+    awards = Award.objects.prefetch_related("liked_by").all()
+    if query:
+        awards = awards.filter(title__icontains=query)
+
+    data = []
+    for award in awards:
+        liked_users = list(award.liked_by.all())
+        data.append({
+            "id": str(award.id),
+            "title": award.title,
+            "issuer": award.issuer,
+            "year": award.year,
+            "thumbnail": award.thumbnail or "",
+            "certificate_url": award.certificate_url or "",
+            "like_count": len(liked_users),
+            "is_liked": request.user.is_authenticated and request.user in liked_users,
+            "edit_url": reverse("main:update_award", args=[award.id]),
+            "delete_url": reverse("main:delete_award", args=[award.id]),
+            "like_url": reverse("main:toggle_like", args=[award.id]),
+        })
+    return JsonResponse({"awards": data})
 
 
 @login_required(login_url="/login/")

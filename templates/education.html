@@ -7,9 +7,23 @@
             <h1>Education</h1>
             {% if user.is_superuser %}<button type="button" class="button project-add-button" popovertarget="add-education-modal">Tambah Pendidikan</button>{% endif %}
         </div>
-        <form id="education-search-form" class="project-search" role="search">
-            <input type="search" id="education-search" class="project-search__input" placeholder="Cari pendidikan" aria-label="Cari pendidikan">
-            <button type="submit" class="button">Cari</button>
+        <form id="education-search-form" class="project-search portfolio-search" role="search">
+            <div class="portfolio-search__field">
+                <label for="education-search">Pencarian</label>
+                <input type="search" id="education-search" class="project-search__input" placeholder="Cari nama institusi">
+            </div>
+            <div class="portfolio-search__field">
+                <label for="education-status">Status pendidikan</label>
+                <select id="education-status" class="project-search__input">
+                    <option value="">Semua pendidikan</option>
+                    <option value="ongoing">Masih berlangsung</option>
+                    <option value="completed">Sudah selesai</option>
+                </select>
+            </div>
+            <div class="portfolio-search__actions">
+                <button type="submit" class="button">Cari</button>
+                <button type="button" id="clear-search" class="button button-secondary" aria-label="Bersihkan pencarian" disabled>Bersihkan</button>
+            </div>
         </form>
         <div id="loading" class="empty-state hide" role="status"><p>Memuat data...</p></div>
         <div id="error" class="empty-state hide" role="alert"><p>Gagal memuat data. Silakan coba lagi.</p></div>
@@ -38,6 +52,8 @@
     const gridContainer = document.getElementById('grid');
     const searchForm = document.getElementById('education-search-form');
     const searchInput = document.getElementById('education-search');
+    const clearSearchButton = document.getElementById('clear-search');
+    const statusFilter = document.getElementById('education-status');
 
     // Menyembunyikan/Menampilkan section halaman
     function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
@@ -158,7 +174,8 @@
         try {
             displayPageSection({ showLoading: true });
 
-            const url = searchQuery ? `${BASE_EDUCATION_ENDPOINT}?q=${encodeURIComponent(searchQuery)}` : BASE_EDUCATION_ENDPOINT;
+            const params = new URLSearchParams({q: searchQuery, status: statusFilter.value});
+            const url = `${BASE_EDUCATION_ENDPOINT}?${params}`;
 
             const response = await fetch(url, {
                 headers: { 'Accept': 'application/json' },
@@ -187,16 +204,31 @@
     }
 
     // Event Handlers untuk Form Search
+    statusFilter.addEventListener('change', function () {
+        clearTimeout(searchDebounceTimer);
+        searchEducation();
+    });
+
     function searchEducation() {
     fetchEducation(searchInput.value.trim());
     }
 
     searchInput.addEventListener("input", function() {
+        clearSearchButton.disabled = searchInput.value.length === 0;
         clearTimeout(searchDebounceTimer);
 
         searchDebounceTimer = setTimeout(function() {
             searchEducation();
         }, SEARCH_DEBOUNCE_DELAY);
+    });
+
+    // Hentikan debounce agar pencarian lama tidak berjalan setelah dibersihkan.
+    clearSearchButton.addEventListener('click', function () {
+        clearTimeout(searchDebounceTimer);
+        searchInput.value = '';
+        clearSearchButton.disabled = true;
+        searchInput.focus();
+        fetchEducation();
     });
 
     searchForm.addEventListener("submit", function(event) {

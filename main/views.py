@@ -132,7 +132,11 @@ def show_main(request):
 
 
 def show_experience(request):
-    return render(request, "experience.html", {"name": PROFILE_NAME, "form": ExperienceForm()})
+    return render(request, "experience.html", {
+        "name": PROFILE_NAME,
+        "form": ExperienceForm(),
+        "categories": Experience.EXPERIENCE_CHOICES,
+    })
 
 
 @login_required(login_url="/login/")
@@ -200,6 +204,9 @@ def get_experience_json(request):
     records = Experience.objects.order_by("-started_at")
     if query:
         records = records.filter(title__icontains=query)
+    category = request.GET.get("category", "")
+    if category:
+        records = records.filter(category=category)
     data = []
     for record in records:
         item = {
@@ -475,6 +482,11 @@ def get_education_json(request):
     records = Education.objects.order_by("-started_year", "institusi")
     if query:
         records = records.filter(institusi__icontains=query)
+    status = request.GET.get("status", "")
+    if status == "ongoing":
+        records = records.filter(ended_year__isnull=True)
+    elif status == "completed":
+        records = records.filter(ended_year__isnull=False)
     data = []
     for record in records:
         item = {

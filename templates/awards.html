@@ -10,6 +10,7 @@
         <form id="award-search-form" class="project-search" role="search">
             <input type="search" id="award-search" class="project-search__input" placeholder="Cari penghargaan" aria-label="Cari penghargaan">
             <button type="submit" class="button">Cari</button>
+            <button type="button" id="clear-search" class="button button-secondary" aria-label="Bersihkan pencarian" disabled>Bersihkan</button>
         </form>
         <div id="loading" class="empty-state hide" role="status"><p>Memuat data...</p></div>
         <div id="error" class="empty-state hide" role="alert"><p>Gagal memuat data. Silakan coba lagi.</p></div>
@@ -38,6 +39,7 @@
     const gridContainer = document.getElementById('grid');
     const searchForm = document.getElementById('award-search-form');
     const searchInput = document.getElementById('award-search');
+    const clearSearchButton = document.getElementById('clear-search');
 
     // Menyembunyikan/Menampilkan section halaman
     function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
@@ -199,11 +201,21 @@
     }
 
     searchInput.addEventListener("input", function() {
+        clearSearchButton.disabled = searchInput.value.length === 0;
         clearTimeout(searchDebounceTimer);
 
         searchDebounceTimer = setTimeout(function() {
             searchAward();
         }, SEARCH_DEBOUNCE_DELAY);
+    });
+
+    // Hentikan debounce agar pencarian lama tidak berjalan setelah dibersihkan.
+    clearSearchButton.addEventListener('click', function () {
+        clearTimeout(searchDebounceTimer);
+        searchInput.value = '';
+        clearSearchButton.disabled = true;
+        searchInput.focus();
+        fetchAward();
     });
 
     searchForm.addEventListener("submit", function(event) {

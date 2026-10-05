@@ -719,6 +719,33 @@ class ProjectAuthorizationTest(TestCase):
                 self.assertTrue(form.is_valid(), form.errors)
                 self.assertEqual(form.cleaned_data[field], "Teks aman")
 
+    def test_portfolio_filters_work_with_search_for_visitors(self):
+        completed = Education.objects.create(
+            institusi="University Alumni", program="SI", description="Finished",
+            started_year=2018, ended_year=2022,
+        )
+        research = Experience.objects.create(
+            title="Experience Research", description="Research work", category="research",
+        )
+        education_url = reverse("main:get_education_json")
+        experience_url = reverse("main:get_experience_json")
+        cases = [
+            (education_url, {"q": "University", "status": "ongoing"}, [self.education.id]),
+            (education_url, {"q": "University", "status": "completed"}, [completed.id]),
+            (education_url, {"q": "Alumni", "status": "ongoing"}, []),
+            (education_url, {}, [self.education.id, completed.id]),
+            (experience_url, {"q": "Experience", "category": "research"}, [research.id]),
+            (experience_url, {"q": "Research", "category": "part-time"}, []),
+            (experience_url, {}, [self.experience.id, research.id]),
+        ]
+        for url, params, expected in cases:
+            response = self.client.get(url, params)
+            self.assertEqual(response.status_code, 200)
+            self.assertCountEqual(
+                [item["id"] for item in response.json()["items"]],
+                [str(pk) for pk in expected],
+            )
+
     def test_validation_rejects_unsafe_urls_and_inconsistent_years(self):
         education = EducationForm({"institusi": "UI", "program": "SI", "description": "Text", "started_year": 2026, "ended_year": 2025})
         self.assertFalse(education.is_valid())

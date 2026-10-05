@@ -132,6 +132,7 @@ def show_main(request):
 
 
 def show_experience(request):
+    # Halaman menyiapkan form dan pilihan filter; daftar data diambil lewat AJAX.
     return render(request, "experience.html", {
         "name": PROFILE_NAME,
         "form": ExperienceForm(),
@@ -200,6 +201,7 @@ def delete_experience(request, experience_id):
 
 
 def get_experience_json(request):
+    # Pencarian judul dan filter kategori dapat digunakan bersamaan.
     query = request.GET.get("q", "").strip()
     records = Experience.objects.order_by("-started_at")
     if query:
@@ -207,6 +209,7 @@ def get_experience_json(request):
     category = request.GET.get("category", "")
     if category:
         records = records.filter(category=category)
+    # Susun JSON secara manual agar field yang diterima JavaScript jelas.
     data = []
     for record in records:
         item = {
@@ -482,6 +485,7 @@ def get_education_json(request):
     records = Education.objects.order_by("-started_year", "institusi")
     if query:
         records = records.filter(institusi__icontains=query)
+    # Tahun selesai yang belum diisi menandakan pendidikan masih berlangsung.
     status = request.GET.get("status", "")
     if status == "ongoing":
         records = records.filter(ended_year__isnull=True)
@@ -501,11 +505,13 @@ def get_education_json(request):
 
 def _create_record_ajax(request, form_class, upload=False):
     """Semua endpoint tambah AJAX memeriksa role dan membalas 201/400/403."""
+    # Hak tambah tetap diperiksa di server meskipun tombol hanya tampil untuk pemilik.
     if not request.user.is_authenticated or not request.user.is_superuser:
         return JsonResponse({"message": "Hanya pemilik portofolio dapat menambah data."}, status=403)
     form = form_class(request.POST, request.FILES if upload else None)
     if not form.is_valid():
         return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+    # Tunda penyimpanan agar thumbnail upload dapat diproses lebih dahulu.
     record = form.save(commit=False)
     if upload:
         _save_experience_thumbnail(form, record)

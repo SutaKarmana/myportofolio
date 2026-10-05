@@ -156,11 +156,13 @@
     }
 
     if (awardForm) {
+        // Form hanya tersedia untuk superuser; pengunjung tetap bisa memuat daftar.
         awardForm.addEventListener('submit', addAward);
     }
 
     // Fetch data award
     async function fetchAward(searchQuery = "") {
+        // Batalkan request lama agar responsnya tidak menggantikan hasil pencarian baru.
         if (awardAbortController) awardAbortController.abort();
         awardAbortController = new AbortController();
 

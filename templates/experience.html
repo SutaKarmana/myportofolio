@@ -167,17 +167,20 @@
     }
 
     if (experienceForm) {
+        // Form hanya tersedia untuk superuser; pengunjung tetap bisa memuat daftar.
         experienceForm.addEventListener('submit', addExperience);
     }
 
     // Fetch data experience
     async function fetchExperience(searchQuery = "") {
+        // Batalkan request lama agar responsnya tidak menggantikan hasil pencarian baru.
         if (experienceAbortController) experienceAbortController.abort();
         experienceAbortController = new AbortController();
 
         try {
             displayPageSection({ showLoading: true });
 
+            // Kirim kata pencarian dan kategori dalam satu request dengan encoding URL.
             const params = new URLSearchParams({q: searchQuery, category: categoryFilter.value});
             const url = `${BASE_EXPERIENCE_ENDPOINT}?${params}`;
 

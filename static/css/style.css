@@ -913,6 +913,56 @@ h1, .brand {
     border-color: var(--accent);
 }
 
+.portfolio-search {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 230px) auto;
+    align-items: end;
+    gap: 1rem;
+}
+
+.portfolio-search__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.portfolio-search__field label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.portfolio-search .project-search__input,
+.portfolio-search .button {
+    min-height: 48px;
+}
+
+.portfolio-search__actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+@media (max-width: 900px) {
+    .portfolio-search {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    }
+
+    .portfolio-search__actions {
+        grid-column: 1 / -1;
+    }
+}
+
+@media (max-width: 600px) {
+    .portfolio-search {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .portfolio-search__actions .button {
+        flex: 1;
+    }
+}
+
 .project-actions {
     display: flex;
     align-items: center;

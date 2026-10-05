@@ -1,0 +1,23 @@
+<div id="add-award-modal" class="project-form-modal" popover="auto" role="dialog" aria-modal="true" aria-labelledby="add-award-title">
+    <button type="button" class="project-form-modal__backdrop" popovertarget="add-award-modal" popovertargetaction="hide" aria-label="Tutup modal"></button>
+    <div class="project-form-modal__content">
+        <button type="button"
+                class="project-form-modal__close"
+                popovertarget="add-award-modal"
+                popovertargetaction="hide"
+                aria-label="Tutup form tambah penghargaan">&times;</button>
+        <h2 id="add-award-title">Tambah Penghargaan</h2>
+        <form id="award-form" method="post" action="{% url 'main:create_award_ajax' %}" class="project-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group" data-field-name="{{ field.name }}">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+            </div>
+            {% endfor %}
+            <div class="project-form-modal__actions">
+                <button type="button" class="button button-secondary" popovertarget="add-award-modal" popovertargetaction="hide">Batal</button>
+                <button type="submit" class="button">Tambah Penghargaan</button>
+            </div>
+        </form>
+    </div>
+</div>

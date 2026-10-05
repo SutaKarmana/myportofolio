@@ -6,6 +6,24 @@ from django.utils.html import strip_tags
 from main.models import Award, Education, Experience, Project
 
 class ExperienceForm(forms.ModelForm):
+    def _clean_text(self, field):
+        value = strip_tags(self.cleaned_data[field]).strip()
+        if not value:
+            raise ValidationError("Isian tidak boleh kosong atau hanya berisi tag HTML.")
+        return value
+
+    def clean_title(self):
+        return self._clean_text("title")
+
+    def clean_description(self):
+        return self._clean_text("description")
+
+    def clean_thumbnail(self):
+        value = self.cleaned_data.get("thumbnail")
+        if value and not value.lower().startswith(("http://", "https://")):
+            raise ValidationError("URL harus menggunakan http:// atau https://.")
+        return value
+
     # Tugas 3: ModelForm untuk bagian Experience dengan field yang dapat diisi.
     thumbnail_source = forms.ChoiceField(
         label="Sumber Thumbnail",
@@ -36,6 +54,24 @@ class ExperienceForm(forms.ModelForm):
                 "thumbnail_file",
             ]
         )
+
+    def clean_thumbnail_file(self):
+        file = self.cleaned_data.get("thumbnail_file")
+        if file:
+            header = file.read(12)
+            file.seek(0)
+            allowed = (
+                header.startswith(b"\x89PNG\r\n\x1a\n")
+                or header.startswith(b"\xff\xd8\xff")
+                or header.startswith((b"GIF87a", b"GIF89a"))
+                or (header.startswith(b"RIFF") and header[8:12] == b"WEBP")
+            )
+            extension = file.name.rsplit(".", 1)[-1].lower()
+            if not allowed or extension not in {"png", "jpg", "jpeg", "gif", "webp"}:
+                raise ValidationError("Upload hanya menerima gambar PNG, JPG, GIF, atau WebP.")
+            if file.size > 5 * 1024 * 1024:
+                raise ValidationError("Ukuran gambar maksimal 5 MB.")
+        return file
 
     def clean(self):
         cleaned_data = super().clean()
@@ -129,10 +165,16 @@ class ProjectForm(forms.ModelForm):
         return title
 
     def clean_tech_stack(self):
-        return strip_tags(self.cleaned_data["tech_stack"]).strip()
+        value = strip_tags(self.cleaned_data["tech_stack"]).strip()
+        if not value:
+            raise ValidationError("Teknologi tidak boleh kosong atau hanya berisi HTML.")
+        return value
 
     def clean_description(self):
-        return strip_tags(self.cleaned_data["description"]).strip()
+        value = strip_tags(self.cleaned_data["description"]).strip()
+        if not value:
+            raise ValidationError("Deskripsi tidak boleh kosong atau hanya berisi HTML.")
+        return value
 
     def _clean_safe_url(self, field_name):
         value = self.cleaned_data.get(field_name)
@@ -148,6 +190,34 @@ class ProjectForm(forms.ModelForm):
 
 
 class EducationForm(forms.ModelForm):
+    def _clean_text(self, field):
+        value = strip_tags(self.cleaned_data[field]).strip()
+        if not value:
+            raise ValidationError("Isian tidak boleh kosong atau hanya berisi tag HTML.")
+        return value
+
+    def clean_institusi(self):
+        return self._clean_text("institusi")
+
+    def clean_program(self):
+        return self._clean_text("program")
+
+    def clean_description(self):
+        return self._clean_text("description")
+
+    def clean_thumbnail(self):
+        value = self.cleaned_data.get("thumbnail")
+        if value and not value.lower().startswith(("http://", "https://")):
+            raise ValidationError("URL harus menggunakan http:// atau https://.")
+        return value
+
+    def clean(self):
+        data = super().clean()
+        start, end = data.get("started_year"), data.get("ended_year")
+        if start is not None and end is not None and end < start:
+            self.add_error("ended_year", "Tahun selesai tidak boleh sebelum tahun mulai.")
+        return data
+
     # Form untuk menambah dan mengubah data pendidikan.
     class Meta:
         model = Education

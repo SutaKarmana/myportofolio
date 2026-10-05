@@ -2,6 +2,9 @@ from django.urls import path
 from django.contrib import admin
 from main.views import (
     create_project_ajax,
+    get_education_json,
+    create_education_ajax,
+    create_experience_ajax,
     show_awards,
     get_awards_json,
     create_award_ajax,
@@ -33,6 +36,9 @@ from main.views import (
 app_name = "main"
 
 urlpatterns = [
+    path("api/education/", get_education_json, name="get_education_json"),
+    path("education/add-ajax/", create_education_ajax, name="create_education_ajax"),
+    path("experience/add-ajax/", create_experience_ajax, name="create_experience_ajax"),
     path("admin/", admin.site.urls),
     path("", show_main, name="show_main"),
     path("experience/", show_experience, name="show_experience"),

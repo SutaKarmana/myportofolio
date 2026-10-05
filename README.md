@@ -5,9 +5,6 @@ NPM : 2506615993
 
 Class : PBP F
 
-## Deskripsi Proyek (New)
-
-Proyek ini merupakan website portofolio pribadi yang dibuat menggunakan Django. Website menampilkan informasi profile, education, experience, awards, dan projects. Data pada beberapa bagian portofolio disimpan di database melalui model Django, kemudian diambil oleh view dan ditampilkan pada template. Pada bagian Education, Experience, dan Awards, pengguna dapat menambahkan, mengubah, dan menghapus data melalui form. Proyek ini juga menyediakan endpoint JSON untuk data Experience dan Project.
 
 #### Pertanyaan Reflektif
 
@@ -365,3 +362,93 @@ Dalam prosesnya, beberapa saran AI perlu saya sesuaikan. Contohnya, akun yang di
 Link percakapan Gemini yang digunakan dalam pengerjaan Tugas 4:
 
 `https://share.gemini.google/z9HY9JVH69po`
+
+
+
+### Tugas 5
+
+#### Pertanyaan Reflektif
+
+1. **Jelaskan apa itu debouncing dan mengapa teknik ini penting diterapkan pada fitur pencarian yang menggunakan AJAX!**
+
+    Debouncing adalah teknik untuk menunda pemanggilan suatu fungsi sampai pengguna berhenti melakukan aksi dalam jangka waktu tertentu. Pada proyek ini, saya menerapkannya pada kolom pencarian dengan menggunakan `setTimeout` dan `clearTimeout`. Setiap kali pengguna mengetik, timer sebelumnya dibatalkan, kemudian timer baru dibuat. Request pencarian baru dikirim setelah pengguna berhenti mengetik selama 300 milidetik. Pola ini mengikuti implementasi Tutorial 05 pada halaman Projects dan diterapkan kembali pada Awards, Education, serta Experience.
+
+    Contohnya, ketika pengguna mengetik kata “Universitas”, aplikasi tidak perlu mengirim request untuk setiap huruf yang dimasukkan. Dengan debouncing, pencarian dilakukan setelah pengguna berhenti mengetik. Cara ini mengurangi request yang tidak diperlukan dan mengurangi pekerjaan server dalam membaca database. Pengguna juga tetap dapat melihat hasil pencarian tanpa memuat ulang seluruh halaman.
+
+    Selain debouncing, saya menggunakan `AbortController` untuk membatalkan request pencarian sebelumnya ketika ada pencarian baru. Hal ini diperlukan karena respons dari server tidak selalu datang sesuai urutan pengirimannya. Tanpa penanganan tersebut, hasil pencarian lama bisa muncul belakangan dan menggantikan hasil yang sebenarnya sedang dicari pengguna. Debouncing mengatur kapan request dikirim, sedangkan `AbortController` membantu menangani request yang sudah dikirim.
+
+2. **Jelaskan fungsi dari penggunaan `await` ketika kita menggunakan `fetch()`! Apa yang akan terjadi jika kita tidak menggunakan `await`?**
+
+    `fetch()` bekerja secara asynchronous dan mengembalikan `Promise`. Oleh karena itu, saya menggunakan `await` di dalam fungsi `async` untuk menunggu hasil request sebelum melanjutkan bagian kode yang membutuhkan hasil tersebut. Pada proyek ini, `await fetch(url)` digunakan untuk mendapatkan objek `Response`, kemudian `await response.json()` digunakan untuk membaca isi respons menjadi object atau array JavaScript.
+
+    Contohnya, fungsi yang mengambil data Education harus mendapatkan respons dan membaca JSON terlebih dahulu sebelum membuat kartu pendidikan. Jika saya langsung menjalankan `const response = fetch(url)` tanpa `await`, variabel `response` masih berisi `Promise`, bukan objek `Response` yang sudah selesai diterima. Akibatnya, kode seperti `response.json()` tidak dapat dipanggil dengan cara yang sama dan dapat menghasilkan error. Jika tidak ingin menggunakan `await`, saya tetap perlu menangani `Promise`, misalnya melalui `.then()` dan `.catch()`.
+
+    Penggunaan `await` tidak berarti seluruh browser berhenti bekerja. Yang ditunda adalah kelanjutan fungsi asynchronous tersebut, sehingga browser tetap dapat menangani aktivitas pengguna lainnya. Saya juga memeriksa `response.ok` karena respons HTTP seperti 400 atau 403 tidak otomatis dianggap sebagai kegagalan jaringan oleh `fetch()`. Setelah itu, pesan validasi atau penolakan akses dari server dapat ditampilkan melalui toast.
+
+3. **Jelaskan apa itu serangan XSS dan mengapa data yang ditampilkan melalui AJAX/JavaScript lebih rentan daripada data yang ditampilkan langsung melalui template Django!**
+
+    XSS atau Cross-Site Scripting adalah serangan ketika input yang tidak aman dapat dijalankan sebagai kode oleh browser pada halaman aplikasi. Contohnya, seseorang memasukkan `<img src="x" onerror="alert('XSS!')">` sebagai judul penghargaan. Jika input tersebut disisipkan sebagai HTML tanpa perlindungan, browser dapat membuat elemen gambar dan menjalankan kode pada atribut `onerror`.
+
+    Template Django melakukan escaping secara otomatis pada nilai seperti `{{ award.title }}`, selama autoescape tidak dimatikan dan nilai tersebut tidak ditandai sebagai `safe`. Sementara itu, ketika data diterima melalui AJAX, proses menampilkannya dilakukan oleh JavaScript. Perlindungan template Django tidak otomatis berlaku ketika JavaScript memasukkan data menggunakan `innerHTML`. Jadi, AJAX sendiri bukan penyebab XSS; risiko muncul dari cara data yang diterima dimasukkan ke dalam halaman.
+
+    Pada Awards, Education, dan Experience, saya mengikuti pola Tutorial 05: membuat elemen kartu menggunakan `document.createElement`, menyusun HTML kartu, lalu memasukkannya melalui `innerHTML`. Setiap nilai teks dari JSON terlebih dahulu diproses dengan `escapeHtml`, sehingga karakter seperti `<`, `>`, dan tanda kutip tidak diperlakukan sebagai tag atau atribut HTML. URL juga diperiksa agar hanya menggunakan HTTP atau HTTPS karena escaping teks saja tidak cukup untuk melindungi atribut seperti `href` dan `src`.
+
+    Pada sisi server, method `clean_<field>` di `ModelForm` menggunakan `strip_tags` untuk membersihkan input teks sebelum disimpan. Jika field wajib menjadi kosong setelah tag dibersihkan, form menolak input tersebut. Namun, `strip_tags` tidak menggantikan perlindungan output; data lama atau data dari sumber lain tetap perlu ditampilkan secara aman. Karena itu, saya menggunakan sanitasi pada server dan penanganan output pada JavaScript secara bersamaan.
+
+## Harap dibaca (Tugas 5)
+
+Pada tugas ini, AJAX diterapkan pada empat halaman, yaitu Projects, Awards, Education, dan Experience. Projects menjadi acuan dari Tutorial 05, kemudian saya menerapkan pola yang sama pada ketiga halaman lainnya. Jadi, penerapannya tidak hanya pada Projects dan Awards, tetapi juga mencakup riwayat pendidikan serta pengalaman.
+
+Di luar fitur wajib tugas, saya menambahkan tombol **Bersihkan** pada pencarian Awards, Education, dan Experience agar pengguna dapat mengosongkan kata pencarian dengan satu klik tanpa reload halaman. Pada Education dan Experience, pilihan filter tetap dipertahankan sehingga pengguna tidak perlu memilih ulang. Jika tidak ada filter yang dipilih, seluruh data ditampilkan kembali.
+
+Saya juga menambahkan **filter status pendidikan** pada Education dan **filter kategori pengalaman** pada Experience. Status pendidikan dibedakan menjadi masih berlangsung jika tahun selesai belum diisi, atau sudah selesai jika tahun selesai sudah diisi. Pada Experience, pengguna dapat memilih kategori seperti Internship, Research, dan Volunteer. Filter dapat digabung dengan pencarian, misalnya memilih Research lalu mencari judul pengalaman tertentu. Daftar diperbarui langsung melalui AJAX ketika pilihan filter berubah.
+
+Untuk merapikan tampilan, kolom pencarian, filter, dan tombol disusun sejajar pada layar desktop, dengan label di atas kolom dan tinggi kontrol yang seragam. Pada layar kecil, susunannya menyesuaikan ruang yang tersedia. Tambahan ini tetap memakai alur tutorial, yaitu meminta data dari endpoint JSON lalu memperbarui daftar tanpa reload halaman.
+
+## DOKUMENTASI AI Tugas 5
+
+### AI Disclosure
+
+Dalam mengerjakan Tugas 5, saya menggunakan ChatGPT/Codex dan Google Gemini Flash 3.6 sebagai alat bantu belajar. ChatGPT/Codex yang terhubung dengan proyek membantu membaca serta mengubah view, URL, form, template, dan JavaScript, melakukan debugging, menyusun jawaban reflektif, serta menjalankan pemeriksaan Django melalui terminal. Sementara itu, Gemini saya gunakan sebagai teman belajar untuk menjelaskan materi dan alur kode yang masih membingungkan. Saya menggunakan percakapan bertahap: memberikan checklist tugas, menanyakan bagian yang belum dipahami, lalu meminta penjelasan dan penyesuaian agar kode mengikuti Tutorial 05.
+
+Bagian yang dibantu AI antara lain alur `fetch()` dan JSON, pencarian dengan debouncing, pengiriman `FormData` dari modal, pemeriksaan hak akses di view, token CSRF, toast, dan perlindungan XSS. Saya juga meminta penjelasan hubungan antarfile, misalnya fungsi `reverse()` untuk membentuk alamat aksi yang dikirim melalui JSON.
+
+### Contoh Prompt yang Saya Gunakan
+
+1. > Mungkin bantu tuntun aku sambil belajar, karena sebelumnya tutorial 5 itu belajar tentang js gitu, tapi aku masih bingung. Sambilan menyelesaikan tugas sambilan bantu aku belajar.
+
+2. > Kenapa kamu menambahkan import reverse di views. Coba jelaskan itu flownya ngapain.
+
+3. > Kalau misalnya aku ga nambahin modal emangnya berefek fatal dengan hasil fetch?
+
+4. > Aku cukup bingung dengan cara flow proses gimana Ajax ini bikin page menjadi ga reload, coba jelaskan
+
+5. > Berdasarkan rubrik penilaian ini. dan minimal checklist apakah ada yang aku lewatkan?
+
+dan sebagainya
+
+### Verifikasi dan Debugging
+
+Saya memeriksa alur perubahan dengan bantuan Codex, mulai dari URL, view, form, sampai template dan JavaScript. Pemeriksaan mencakup validasi penambahan data, hak akses pengunjung, pengguna biasa, Editor, dan superuser, serta penggunaan CSRF dan sanitasi input. Beberapa perintah yang digunakan adalah:
+
+```bash
+python manage.py check
+python manage.py test main
+python manage.py makemigrations --check --dry-run
+```
+
+Hasil pemeriksaan terakhir menunjukkan konfigurasi Django tidak bermasalah, seluruh 36 test menghasilkan `OK`, dan tidak ada perubahan model yang belum memiliki migration. Halaman daftar dan endpoint JSON juga diperiksa melalui server lokal. Namun, pemeriksaan backend tetap perlu dilengkapi dengan percobaan langsung di browser untuk memastikan modal, pencarian, toast, dan pembaruan daftar berjalan sesuai harapan.
+
+Salah satu kendala debugging adalah perubahan nama pada navbar yang belum terlihat karena server sebelumnya menggunakan `--noreload`. Setelah server dijalankan kembali dengan pemuatan ulang otomatis, perubahan dapat dimuat. Saya juga meminta perbandingan kode dengan commit sebelumnya agar fitur Projects dan tugas-tugas sebelumnya tetap dipertahankan ketika bagian yang tidak diperlukan dibersihkan.
+
+### Refleksi Penggunaan AI
+
+Dalam proses pengerjaan, saya menemukan bahwa AI terkadang memberikan saran yang melewati kebutuhan tugas. Hal ini justru membuat saya kebingungan mengikuti alur kode, terutama ketika perubahan yang diberikan terlalu banyak sekaligus. Karena itu, saya perlu mengarahkan AI agar menjelaskan perubahan secara bertahap dan tetap mengikuti pola tutorial. Saya juga perlu membaca serta memeriksa kode secara manual, lalu mencocokkannya dengan materi dan instruksi tugas. Dari proses ini, saya belajar bahwa saran AI tetap perlu dievaluasi, bukan langsung diterima hanya karena terlihat lebih lengkap atau rumit.
+
+Pemeriksaan dengan bantuan AI menghasilkan 36 test Django yang lolos. Namun, hasil test backend belum memastikan seluruh tampilan dan interaksi JavaScript sudah benar. Saya tetap perlu membaca kembali kode dan mencoba fitur langsung melalui browser agar memahami hasil perubahan, bukan hanya menerima saran AI.
+
+### Link Percakapan Gemini Tugas 5
+
+Link percakapan Gemini yang saya gunakan untuk mempelajari konteks materi Tugas 5:
+
+`https://share.gemini.google/nden4wb9yjSw`

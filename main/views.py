@@ -5,6 +5,9 @@ import datetime
 from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
+
+from main.models import Project
+
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.decorators import login_required
@@ -17,7 +20,6 @@ from main.models import Award, Experience, Education, Project
 from main.forms import AwardForm, EducationForm, ExperienceForm, ProjectForm
 
 PROFILE_NAME = "I Nyoman Yadnya Suta Karmana"
-
 
 @require_POST
 def create_project_ajax(request):

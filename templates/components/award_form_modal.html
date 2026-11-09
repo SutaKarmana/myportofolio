@@ -7,11 +7,12 @@
                 popovertargetaction="hide"
                 aria-label="Tutup form tambah penghargaan">&times;</button>
         <h2 id="add-award-title">Tambah Penghargaan</h2>
-        <form id="award-form" method="post" action="{% url 'main:create_award_ajax' %}" class="project-form" enctype="multipart/form-data">
+        <form id="award-form" method="post" action="{% url 'api:award-list' %}" class="project-form" novalidate>
             {% csrf_token %}
             {% for field in form %}
             <div class="form-group" data-field-name="{{ field.name }}">
                 <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+                <p class="form-error" data-error-for="{{ field.name }}" id="award-error-{{ field.name }}" aria-live="polite"></p>
             </div>
             {% endfor %}
             <div class="project-form-modal__actions">

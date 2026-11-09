@@ -1,0 +1,47 @@
+<dialog id="award-gallery" class="award-gallery" aria-labelledby="award-gallery-title" aria-describedby="award-gallery-byline">
+    <header class="award-gallery__header">
+        <div class="award-gallery__brand">
+            <span class="award-gallery__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                    <rect x="4" y="3" width="16" height="18" rx="2" />
+                    <path d="M8 8h8M8 12h5M8 16h3" />
+                </svg>
+            </span>
+            <span>Galeri Sertifikat</span>
+        </div>
+        <button type="button" id="award-gallery-close" class="award-gallery__close" aria-label="Tutup galeri sertifikat" autofocus>&times;</button>
+    </header>
+    <div class="award-gallery__body">
+        <div class="award-gallery__media">
+            <div class="award-gallery__stage">
+                <img id="award-gallery-image" class="award-gallery__image" alt="" hidden>
+                <object id="award-gallery-pdf" class="award-gallery__pdf" type="application/pdf" aria-label="Dokumen sertifikat" hidden>
+                    <p>Dokumen tidak dapat dipratinjau. Pilih Buka Berkas Asli untuk melihatnya.</p>
+                </object>
+                <p id="award-gallery-message" class="award-gallery__message" role="status" hidden></p>
+            </div>
+        </div>
+        <aside class="award-gallery__details">
+            <div>
+                <span id="award-gallery-year" class="award-gallery__year"></span>
+                <h2 id="award-gallery-title"></h2>
+                <p class="award-gallery__label">Penyelenggara</p>
+                <p id="award-gallery-byline" class="award-gallery__byline"></p>
+            </div>
+            <div id="award-gallery-modes" class="award-gallery__modes" aria-label="Jenis pratinjau">
+                <button type="button" id="award-gallery-show-image" aria-pressed="true">Gambar</button>
+                <button type="button" id="award-gallery-show-pdf" aria-pressed="false">Dokumen PDF</button>
+            </div>
+            <p id="award-gallery-pdf-hint" class="award-gallery__hint" hidden>Jika pratinjau PDF tidak muncul, buka berkas asli melalui tombol di bawah.</p>
+            <a id="award-gallery-original" class="award-gallery__original" target="_blank" rel="noopener noreferrer" hidden>Buka Berkas Asli <span aria-hidden="true">&#8599;</span></a>
+        </aside>
+    </div>
+    <footer class="award-gallery__navigation">
+        <button type="button" id="award-gallery-previous" class="award-gallery__nav-button"><span aria-hidden="true">&larr;</span> <span class="award-gallery__nav-label">Sebelumnya</span></button>
+        <div class="award-gallery__position">
+            <span class="award-gallery__label">Penghargaan</span>
+            <p id="award-gallery-counter" role="status" aria-live="polite"></p>
+        </div>
+        <button type="button" id="award-gallery-next" class="award-gallery__nav-button"><span class="award-gallery__nav-label">Berikutnya</span> <span aria-hidden="true">&rarr;</span></button>
+    </footer>
+</dialog>

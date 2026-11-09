@@ -10,9 +10,10 @@ class IsPortfolioOwnerOrReadOnly(BasePermission):
         )
 
 class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
-    """Hak akses Awards mengikuti permission model yang juga dipakai view HTML."""
+    """Izin edit mengikuti permission model yang juga dipakai view HTML."""
 
     message = "Hanya pemilik dapat menambah/menghapus; Editor dapat mengubah penghargaan."
+    edit_permission = "main.change_award"
 
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
@@ -23,5 +24,10 @@ class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
             return True
         return (
             request.method in ("PUT", "PATCH")
-            and request.user.has_perm("main.change_award")
+            and request.user.has_perm(self.edit_permission)
         )
+
+
+class IsExperienceOwnerOrEditorOrReadOnly(IsPortfolioOwnerOrEditorOrReadOnly):
+    edit_permission = "main.change_experience"
+    message = "Hanya pemilik dapat menambah/menghapus; Editor dapat mengubah pengalaman."

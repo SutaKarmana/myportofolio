@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils.html import strip_tags
 
 from main.models import Award, Education, Experience, Project
+from main.uploads import validate_experience_thumbnail
 
 class ExperienceForm(forms.ModelForm):
     def _clean_text(self, field):
@@ -57,22 +58,8 @@ class ExperienceForm(forms.ModelForm):
         )
 
     def clean_thumbnail_file(self):
-        # Periksa isi awal file, ekstensi, dan ukuran; jangan hanya percaya nama file.
         file = self.cleaned_data.get("thumbnail_file")
-        if file:
-            header = file.read(12)
-            file.seek(0)
-            allowed = (
-                header.startswith(b"\x89PNG\r\n\x1a\n")
-                or header.startswith(b"\xff\xd8\xff")
-                or header.startswith((b"GIF87a", b"GIF89a"))
-                or (header.startswith(b"RIFF") and header[8:12] == b"WEBP")
-            )
-            extension = file.name.rsplit(".", 1)[-1].lower()
-            if not allowed or extension not in {"png", "jpg", "jpeg", "gif", "webp"}:
-                raise ValidationError("Upload hanya menerima gambar PNG, JPG, GIF, atau WebP.")
-            if file.size > 5 * 1024 * 1024:
-                raise ValidationError("Ukuran gambar maksimal 5 MB.")
+        validate_experience_thumbnail(file)
         return file
 
     def clean(self):

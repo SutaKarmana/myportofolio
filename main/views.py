@@ -1,8 +1,5 @@
-from pathlib import Path
-from uuid import uuid4
 import datetime
 
-from django.conf import settings
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
 
@@ -18,6 +15,7 @@ from django.urls import reverse
 
 from main.models import Award, Experience, Education, Project
 from main.forms import AwardForm, EducationForm, ExperienceForm, ProjectForm
+from main.uploads import store_experience_thumbnail
 
 PROFILE_NAME = "I Nyoman Yadnya Suta Karmana"
 
@@ -102,16 +100,7 @@ def _save_experience_thumbnail(form, experience):
     thumbnail_file = form.cleaned_data.get("thumbnail_file")
 
     if source == "upload" and thumbnail_file:
-        image_directory = Path(settings.BASE_DIR) / "static" / "img"
-        image_directory.mkdir(parents=True, exist_ok=True)
-        file_name = f"experience-{uuid4().hex}{Path(thumbnail_file.name).suffix.lower()}"
-        file_path = image_directory / file_name
-
-        with file_path.open("wb+") as destination:
-            for chunk in thumbnail_file.chunks():
-                destination.write(chunk)
-
-        experience.thumbnail = f"/static/img/{file_name}"
+        experience.thumbnail = store_experience_thumbnail(thumbnail_file)
     else:
         experience.thumbnail = experience.thumbnail or ""
 

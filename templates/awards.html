@@ -5,59 +5,115 @@
     <section class="experience-section"><div class="container">
         <div class="project-header">
             <h1>Awards</h1>
-            {% if user.is_superuser %}<button type="button" class="button project-add-button" popovertarget="add-award-modal">Tambah Penghargaan</button>{% endif %}
+            {% if user.is_superuser %}<button type="button" id="add-award-button" class="button project-add-button" popovertarget="add-award-modal">Tambah Penghargaan</button>{% endif %}
         </div>
-        <form id="award-search-form" class="project-search" role="search">
-            <input type="search" id="award-search" class="project-search__input" placeholder="Cari penghargaan" aria-label="Cari penghargaan">
-            <button type="submit" class="button">Cari</button>
-            <button type="button" id="clear-search" class="button button-secondary" aria-label="Bersihkan pencarian" disabled>Bersihkan</button>
+        <form id="award-search-form" class="project-search portfolio-search award-search" role="search">
+            <div class="portfolio-search__field">
+                <label for="award-search">Pencarian</label>
+                <input type="search" id="award-search" class="project-search__input" placeholder="Cari penghargaan" maxlength="255">
+            </div>
+            <div class="portfolio-search__field">
+                <label for="award-year">Tahun</label>
+                <input type="number" id="award-year" class="project-search__input" min="0" max="2147483647" placeholder="Semua tahun">
+            </div>
+            <div class="portfolio-search__field">
+                <label for="award-ordering">Urutkan</label>
+                <select id="award-ordering" class="project-search__input">
+                    <option value="-year">Terbaru</option>
+                    <option value="year">Terlama</option>
+                    <option value="title">Nama A–Z</option>
+                </select>
+            </div>
+            <div class="portfolio-search__actions">
+                <button type="submit" class="button">Cari</button>
+                <button type="button" id="clear-search" class="button button-secondary" disabled>Reset filter</button>
+            </div>
         </form>
+        <div class="project-header award-results-bar">
+            <p id="award-results" role="status" aria-live="polite"></p>
+            <button type="button" id="share-awards" class="button button-secondary">Salin tautan hasil</button>
+        </div>
         <div id="loading" class="empty-state hide" role="status"><p>Memuat data...</p></div>
-        <div id="error" class="empty-state hide" role="alert"><p>Gagal memuat data. Silakan coba lagi.</p></div>
+        <div id="error" class="empty-state hide" role="alert"><p>Gagal memuat data. Silakan coba lagi.</p><button type="button" id="retry-awards" class="button">Coba lagi</button></div>
         <div id="empty" class="empty-state hide"><p>Belum ada data yang ditambahkan atau ditemukan.</p></div>
         <div id="grid" class="awards-grid hide"></div>
     </div></section>
 </main>
-{% if user.is_superuser %}
+{% if user.is_superuser or perms.main.change_award %}
     {% include 'components/award_form_modal.html' %}
 {% endif %}
+{# Cookie CSRF juga dibutuhkan pengguna biasa untuk Like lewat fetch. #}
+{% csrf_token %}
 <script>
-
-    //Timer Debounce
-    const SEARCH_DEBOUNCE_DELAY = 300;
-    let searchDebounceTimer;
-    // Konfigurasi
-    const BASE_AWARD_ENDPOINT = "{% url 'main:get_awards_json' %}";
+    // Pola Tutorial 07: URL DRF, data JSON, dan satu fungsi untuk operasi tulis.
+    const BASE_AWARD_ENDPOINT = "{% url 'api:award-list' %}";
+    const DETAIL_AWARD_ENDPOINT = "{% url 'api:award-detail' '00000000-0000-0000-0000-000000000000' %}";
+    const STAR_AWARD_ENDPOINT = "{% url 'api:award-star' '00000000-0000-0000-0000-000000000000' %}";
     const CAN_EDIT = "{% if user.is_superuser or perms.main.change_award %}true{% else %}false{% endif %}" === "true";
     const IS_SUPERUSER = "{{ user.is_superuser|yesno:'true,false' }}" === "true";
-    let awardAbortController;
+    const IS_AUTHENTICATED = "{{ user.is_authenticated|yesno:'true,false' }}" === "true";
+    const SEARCH_DEBOUNCE_DELAY = 300;
+    const AWARD_FIELDS = ['title', 'issuer', 'year', 'thumbnail', 'certificate_url'];
 
-    // Elemen DOM
     const loadingState = document.getElementById('loading');
     const errorState = document.getElementById('error');
     const emptyState = document.getElementById('empty');
     const gridContainer = document.getElementById('grid');
     const searchForm = document.getElementById('award-search-form');
     const searchInput = document.getElementById('award-search');
+    const yearFilter = document.getElementById('award-year');
+    const orderingFilter = document.getElementById('award-ordering');
     const clearSearchButton = document.getElementById('clear-search');
+    const resultsSummary = document.getElementById('award-results');
+    const awardForm = document.getElementById('award-form');
+    const awardModal = document.getElementById('add-award-modal');
+    let awardAbortController;
+    let searchDebounceTimer;
+    let editingAwardId = null;
+    const pendingLikes = new Set();
+    let likeRevision = 0;
 
-    // Menyembunyikan/Menampilkan section halaman
-    function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
-        loadingState.classList.toggle('hide', !showLoading);
-        errorState.classList.toggle('hide', !showError);
-        emptyState.classList.toggle('hide', !showEmpty);
-        gridContainer.classList.toggle('hide', !showGrid);
+    // Query halaman dan query API memakai filter yang sama. URL dapat dibagikan/reload.
+    function awardSearchParams() {
+        const params = new URLSearchParams();
+        if (searchInput.value.trim()) params.set('q', searchInput.value.trim());
+        if (yearFilter.value) params.set('year', yearFilter.value);
+        if (orderingFilter.value !== '-year') params.set('ordering', orderingFilter.value);
+        return params;
     }
-    // Mengubah karakter khusus HTML menjadi entity agar ditampilkan sebagai teks
+
+    function readFiltersFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        searchInput.value = params.get('q') || '';
+        yearFilter.value = params.get('year') || '';
+        const ordering = params.get('ordering');
+        orderingFilter.value = ['-year', 'year', 'title'].includes(ordering) ? ordering : '-year';
+    }
+
+    function updatePageUrl(params) {
+        const url = new URL(window.location.href);
+        ['q', 'year', 'ordering'].forEach(name => {
+            if (params.has(name)) url.searchParams.set(name, params.get(name));
+            else url.searchParams.delete(name);
+        });
+        // replaceState memperbarui alamat tanpa reload atau menambah riwayat tiap ketikan.
+        window.history.replaceState(null, '', url);
+        return url;
+    }
+
+    function getCookie(name) {
+        const prefix = `${name}=`;
+        const cookie = document.cookie.split(';').map(value => value.trim())
+            .find(value => value.startsWith(prefix));
+        return cookie ? decodeURIComponent(cookie.slice(prefix.length)) : null;
+    }
+
     function escapeHtml(value) {
-        return String(value ?? '')
-            .replaceAll('&', '&amp;')
-            .replaceAll('<', '&lt;')
-            .replaceAll('>', '&gt;')
-            .replaceAll('"', '&quot;')
-            .replaceAll("'", '&#39;');
+        return String(value ?? '').replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;').replaceAll("'", '&#39;');
     }
-    // URL diperiksa terpisah karena escaping teks tidak menolak javascript:.
+
     function safeUrl(value) {
         if (!value) return '';
         try {
@@ -66,20 +122,27 @@
         } catch (error) { return ''; }
     }
 
-    // Edit, hapus, dan reaksi tetap memakai alur biasa seperti tutorial.
+    function awardEndpoint(pattern, id) {
+        return pattern.replace('00000000-0000-0000-0000-000000000000', id);
+    }
+
+    function displayPageSection({ showLoading = false, showError = false, showEmpty = false, showGrid = false }) {
+        loadingState.classList.toggle('hide', !showLoading);
+        errorState.classList.toggle('hide', !showError);
+        emptyState.classList.toggle('hide', !showEmpty);
+        gridContainer.classList.toggle('hide', !showGrid);
+        gridContainer.setAttribute('aria-busy', String(showLoading));
+    }
+
     function buildActionsHtml(item) {
-        const editHtml = CAN_EDIT ? `<a class="button" href="${escapeHtml(safeUrl(item.edit_url))}">Edit</a>` : '';
-        const deleteHtml = IS_SUPERUSER ? `<form method="post" action="${escapeHtml(safeUrl(item.delete_url))}">
-            {% csrf_token %}<button type="submit" class="button button-danger" onclick="return confirm('Hapus data ini?');">Hapus</button>
-        </form>` : '';
-        return `<div class="project-actions">${editHtml}${deleteHtml}
-            <form method="post" action="${escapeHtml(safeUrl(item.like_url))}" class="star-form">
-                {% csrf_token %}
-                <button type="submit" class="button button-star${item.is_liked ? ' is-starred' : ''}">
-                    ${item.is_liked ? 'Unlike' : 'Like'} <span class="star-count">${escapeHtml(item.like_count)}</span>
-                </button>
-            </form>
-        </div>`;
+        const id = escapeHtml(item.id);
+        const editHtml = CAN_EDIT ? `<button type="button" class="button" data-action="edit" data-id="${id}">Edit</button>` : '';
+        const deleteHtml = IS_SUPERUSER ? `<button type="button" class="button button-danger" data-action="delete" data-id="${id}">Hapus</button>` : '';
+        const likeHtml = IS_AUTHENTICATED
+            ? `<button type="button" class="button button-star${item.is_liked ? ' is-starred' : ''}" data-action="like" data-id="${id}" aria-pressed="${item.is_liked}" ${pendingLikes.has(item.id) ? 'disabled' : ''}>
+                ${item.is_liked ? 'Unlike' : 'Like'} <span class="star-count">${escapeHtml(item.like_count)}</span></button>`
+            : `<a href="{% url 'main:login' %}" class="button">Login untuk Like (${escapeHtml(item.like_count)})</a>`;
+        return `<div class="project-actions">${editHtml}${deleteHtml}${likeHtml}</div>`;
     }
 
     function buildAwardCardElement(award) {
@@ -88,8 +151,7 @@
         const thumbnail = safeUrl(award.thumbnail);
         const certificate = safeUrl(award.certificate_url);
         const imageHtml = thumbnail
-            ? `<img src="${escapeHtml(thumbnail)}" alt="Sertifikat ${escapeHtml(award.title)}">`
-            : '';
+            ? `<img src="${escapeHtml(thumbnail)}" alt="Sertifikat ${escapeHtml(award.title)}">` : '';
         const previewHtml = certificate
             ? `<a class="award-preview" href="${escapeHtml(certificate)}" target="_blank" rel="noopener noreferrer">${imageHtml}<span class="award-file-label">Open PDF</span></a>`
             : `<div class="award-preview">${imageHtml}<span class="award-file-label">Award</span></div>`;
@@ -101,136 +163,209 @@
         return articleElement;
     }
 
-    // Endpoint tambah data melalui AJAX.
-    const CREATE_AWARD_ENDPOINT = "{% url 'main:create_award_ajax' %}";
-    const awardForm = document.getElementById('award-form');
-
-    // Membaca nilai cookie, digunakan untuk mengambil token CSRF
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
+    function updateLikeButton(award) {
+        const button = gridContainer.querySelector(`button[data-action="like"][data-id="${award.id}"]`);
+        if (!button) return;
+        button.classList.toggle('is-starred', award.is_liked);
+        button.setAttribute('aria-pressed', String(award.is_liked));
+        button.textContent = award.is_liked ? 'Unlike ' : 'Like ';
+        const count = document.createElement('span');
+        count.className = 'star-count';
+        count.textContent = award.like_count;
+        button.appendChild(count);
     }
 
-    // Mengirim data form ke server
-    async function addAward(event) {
+    function apiErrorMessage(data, status) {
+        const messages = Object.values(data).flat().filter(value => typeof value === 'string');
+        return messages.join(' ') || `Permintaan gagal (HTTP ${status}).`;
+    }
+
+    async function writeAward(url, method, payload) {
+        const response = await fetch(url, {
+            method,
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken'),
+            },
+            body: payload === undefined ? undefined : JSON.stringify(payload),
+        });
+        if (response.status === 204) return null;
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+            const error = new Error(apiErrorMessage(data, response.status));
+            error.fields = response.status === 400 ? data : {};
+            throw error;
+        }
+        return data;
+    }
+
+    function clearFormErrors() {
+        awardForm.querySelectorAll('.form-error').forEach(element => element.textContent = '');
+        AWARD_FIELDS.forEach(name => awardForm.elements[name].removeAttribute('aria-invalid'));
+    }
+
+    function showFormErrors(errors) {
+        let firstInvalid;
+        AWARD_FIELDS.forEach(name => {
+            if (!errors[name]) return;
+            const input = awardForm.elements[name];
+            awardForm.querySelector(`[data-error-for="${name}"]`).textContent = errors[name].join(' ');
+            input.setAttribute('aria-invalid', 'true');
+            input.setAttribute('aria-describedby', `award-error-${name}`);
+            firstInvalid ??= input;
+        });
+        firstInvalid?.focus();
+    }
+
+    // Satu modal yang sudah ada dipakai untuk tambah (POST) dan edit (PATCH).
+    function prepareAwardForm(award = null) {
+        editingAwardId = award ? award.id : null;
+        awardForm.reset();
+        clearFormErrors();
+        document.getElementById('add-award-title').textContent = award ? 'Edit Penghargaan' : 'Tambah Penghargaan';
+        awardForm.querySelector('button[type="submit"]').textContent = award ? 'Simpan Perubahan' : 'Tambah Penghargaan';
+        if (award) AWARD_FIELDS.forEach(name => awardForm.elements[name].value = award[name] ?? '');
+    }
+
+    async function saveAward(event) {
         event.preventDefault();
-
-        const submitButton = awardForm.querySelector('button[type="submit"]');
-        submitButton.disabled = true;
-
+        const button = awardForm.querySelector('button[type="submit"]');
+        button.disabled = true;
+        clearFormErrors();
         try {
-            const response = await fetch(CREATE_AWARD_ENDPOINT, {
-                method: 'POST',
-                headers: { 'X-CSRFToken': getCookie('csrftoken') },
-                body: new FormData(awardForm),
-            });
-            const result = await response.json().catch(() => ({}));
-
-            if (response.ok) {
-                awardForm.reset();
-                closeAwardModal();
-                showToast('Berhasil', 'Penghargaan baru berhasil ditambahkan!', 'success');
-                fetchAward(searchInput.value.trim());
-            } else {
-                const errorMessages = result.errors
-                    ? Object.values(result.errors).flat().map(error => error.message)
-                    : [result.message || `Terjadi kesalahan (status ${response.status}).`];
-                showToast('Gagal menambahkan penghargaan', errorMessages.join(' '), 'error');
-            }
+            const fields = new FormData(awardForm);
+            const payload = Object.fromEntries(AWARD_FIELDS.map(name => [name, fields.get(name)]));
+            const isEditing = editingAwardId !== null;
+            const url = isEditing ? awardEndpoint(DETAIL_AWARD_ENDPOINT, editingAwardId) : BASE_AWARD_ENDPOINT;
+            await writeAward(url, isEditing ? 'PATCH' : 'POST', payload);
+            awardModal.hidePopover();
+            showToast('Berhasil', isEditing ? 'Penghargaan diperbarui.' : 'Penghargaan ditambahkan.', 'success');
+            await fetchAward();
         } catch (error) {
-            console.error('Error adding award:', error);
-            showToast('Gagal menambahkan penghargaan', 'Tidak dapat terhubung ke server. Silakan coba lagi.', 'error');
+            showFormErrors(error.fields || {});
+            showToast('Gagal menyimpan penghargaan', error.message, 'error');
         } finally {
-            submitButton.disabled = false;
+            button.disabled = false;
         }
     }
 
-    if (awardForm) {
-        // Form hanya tersedia untuk superuser; pengunjung tetap bisa memuat daftar.
-        awardForm.addEventListener('submit', addAward);
-    }
-
-    // Fetch data award
-    async function fetchAward(searchQuery = "") {
-        // Batalkan request lama agar responsnya tidak menggantikan hasil pencarian baru.
+    async function fetchAward() {
+        clearSearchButton.disabled = !searchInput.value && !yearFilter.value && orderingFilter.value === '-year';
+        if (!searchForm.reportValidity()) return;
         if (awardAbortController) awardAbortController.abort();
         awardAbortController = new AbortController();
-
+        const controller = awardAbortController;
+        const revision = likeRevision;
+        const params = awardSearchParams();
         try {
             displayPageSection({ showLoading: true });
-
-            const url = searchQuery ? `${BASE_AWARD_ENDPOINT}?q=${encodeURIComponent(searchQuery)}` : BASE_AWARD_ENDPOINT;
-
+            resultsSummary.textContent = '';
+            const url = new URL(BASE_AWARD_ENDPOINT, window.location.origin);
+            url.search = params.toString();
             const response = await fetch(url, {
-                headers: { 'Accept': 'application/json' },
-                signal: awardAbortController.signal,
+                headers: { Accept: 'application/json' }, signal: controller.signal,
             });
-
-            if (!response.ok) throw new Error('Failed to fetch data');
-
-            const result = await response.json();
-            const awardData = result.awards;
-
-            if (awardData.length === 0) {
-                displayPageSection({ showEmpty: true });
-            } else {
-                gridContainer.innerHTML = '';
-                awardData.forEach(item => {
-                    gridContainer.appendChild(buildAwardCardElement(item));
-                });
-                displayPageSection({ showGrid: true });
-            }
+            const awards = await response.json().catch(() => ({}));
+            if (controller.signal.aborted) return;
+            if (!response.ok) throw new Error(apiErrorMessage(awards, response.status));
+            // Respons GET yang dimulai sebelum Like berhasil bisa membawa jumlah lama.
+            // Hanya pada kondisi bersamaan ini daftar diminta ulang.
+            if (revision !== likeRevision) return fetchAward();
+            // API DRF mengirim array langsung, tidak lagi {awards: [...]}.
+            gridContainer.replaceChildren(...awards.map(buildAwardCardElement));
+            resultsSummary.textContent = `${awards.length} penghargaan ditemukan`;
+            displayPageSection({ showGrid: awards.length > 0, showEmpty: awards.length === 0 });
+            updatePageUrl(params);
         } catch (error) {
             if (error.name === 'AbortError') return;
-            console.error('Error loading award:', error);
             displayPageSection({ showError: true });
+            showToast('Gagal memuat penghargaan', error.message, 'error');
         }
     }
 
-    // Event Handlers untuk Form Search
-    function searchAward() {
-    fetchAward(searchInput.value.trim());
-    }
-
-    searchInput.addEventListener("input", function() {
-        clearSearchButton.disabled = searchInput.value.length === 0;
-        clearTimeout(searchDebounceTimer);
-
-        searchDebounceTimer = setTimeout(function() {
-            searchAward();
-        }, SEARCH_DEBOUNCE_DELAY);
+    // Event delegation seperti Tutorial 07: tombol tetap bekerja setelah kartu dirender ulang.
+    gridContainer.addEventListener('click', async function(event) {
+        const button = event.target.closest('button[data-action]');
+        if (!button || button.disabled) return;
+        const action = button.dataset.action;
+        if (action === 'like' && pendingLikes.has(button.dataset.id)) return;
+        if (action === 'delete' && !window.confirm('Hapus penghargaan ini?')) return;
+        if (action === 'like') pendingLikes.add(button.dataset.id);
+        button.disabled = true;
+        try {
+            if (action === 'edit') {
+                const response = await fetch(awardEndpoint(DETAIL_AWARD_ENDPOINT, button.dataset.id), {
+                    headers: { Accept: 'application/json' },
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) throw new Error(apiErrorMessage(data, response.status));
+                prepareAwardForm(data);
+                awardModal.showPopover();
+                return;
+            }
+            const pattern = action === 'like' ? STAR_AWARD_ENDPOINT : DETAIL_AWARD_ENDPOINT;
+            const result = await writeAward(awardEndpoint(pattern, button.dataset.id), action === 'like' ? 'POST' : 'DELETE');
+            if (action === 'like') {
+                // Respons API sudah berisi jumlah/status terbaru; kartu dan fokus dipertahankan.
+                likeRevision += 1;
+                updateLikeButton(result);
+                showToast('Berhasil', 'Like diperbarui.', 'success');
+                return;
+            }
+            showToast('Berhasil', 'Penghargaan dihapus.', 'success');
+            await fetchAward();
+        } catch (error) {
+            showToast('Permintaan gagal', error.message, 'error');
+        } finally {
+            button.disabled = false;
+            if (action === 'like') {
+                pendingLikes.delete(button.dataset.id);
+                const currentButton = gridContainer.querySelector(`button[data-action="like"][data-id="${button.dataset.id}"]`);
+                if (currentButton) currentButton.disabled = false;
+            }
+        }
     });
 
-    // Hentikan debounce agar pencarian lama tidak berjalan setelah dibersihkan.
-    clearSearchButton.addEventListener('click', function () {
+    if (awardForm) awardForm.addEventListener('submit', saveAward);
+    document.getElementById('add-award-button')?.addEventListener('click', () => prepareAwardForm());
+    [searchInput, yearFilter].forEach(input => input.addEventListener('input', function() {
+        clearSearchButton.disabled = false;
         clearTimeout(searchDebounceTimer);
-        searchInput.value = '';
-        clearSearchButton.disabled = true;
+        searchDebounceTimer = setTimeout(fetchAward, SEARCH_DEBOUNCE_DELAY);
+    }));
+    orderingFilter.addEventListener('change', function() {
+        clearTimeout(searchDebounceTimer);
+        fetchAward();
+    });
+    clearSearchButton.addEventListener('click', function() {
+        clearTimeout(searchDebounceTimer);
+        searchForm.reset();
         searchInput.focus();
         fetchAward();
     });
-
-    searchForm.addEventListener("submit", function(event) {
+    searchForm.addEventListener('submit', function(event) {
         event.preventDefault();
         clearTimeout(searchDebounceTimer);
-        searchAward();
+        fetchAward();
     });
-
-    // Start application
-    fetchAward(searchInput.value.trim());
-    function closeAwardModal() {
-    document.getElementById("add-award-modal").hidePopover();
-    }
-
+    document.getElementById('retry-awards').addEventListener('click', () => fetchAward());
+    document.getElementById('share-awards').addEventListener('click', async function() {
+        if (!searchForm.reportValidity()) return;
+        const url = updatePageUrl(awardSearchParams());
+        try {
+            await navigator.clipboard.writeText(url.href);
+            showToast('Berhasil', 'Tautan hasil pencarian disalin.', 'success');
+        } catch (error) {
+            showToast('Tautan pencarian', 'Salin alamat pada bilah URL browser untuk membagikan hasil ini.', 'normal');
+        }
+    });
+    window.addEventListener('popstate', function() {
+        clearTimeout(searchDebounceTimer);
+        readFiltersFromUrl();
+        fetchAward();
+    });
+    readFiltersFromUrl();
+    fetchAward();
 </script>
 {% endblock content %}

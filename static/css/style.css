@@ -943,6 +943,16 @@ h1, .brand {
     gap: 0.5rem;
 }
 
+/* Tugas 6: filter Awards memakai komponen pencarian yang sudah ada. */
+.award-search {
+    grid-template-columns: minmax(0, 1fr) minmax(100px, 150px) minmax(140px, 180px) auto;
+}
+
+.award-results-bar {
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
 @media (max-width: 900px) {
     .portfolio-search {
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

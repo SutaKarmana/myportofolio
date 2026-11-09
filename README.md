@@ -5,6 +5,28 @@ NPM : 2506615993
 
 Class : PBP F
 
+## Tentang Proyek
+
+Website ini adalah portofolio pribadi saya yang dikembangkan bertahap pada mata kuliah Pemrograman Berbasis Platform. Bagian utamanya adalah Profile, Education, Experience, Projects, dan Awards. Data disimpan melalui model Django, sedangkan halaman Projects, Awards, dan Experience sudah memakai Django REST Framework (DRF) untuk berkomunikasi dengan JavaScript melalui JSON.
+
+## Menjalankan Proyek Secara Lokal
+
+Pengembangan lokal menggunakan Python 3.12, Django, DRF, dan SQLite. Dependency lengkap tercatat di `requirements.txt`. Berikut langkah dari awal melalui terminal PowerShell:
+
+```powershell
+git clone https://github.com/SutaKarmana/myportofolio.git
+cd myportofolio
+python -m venv env
+.\env\Scripts\python.exe -m pip install -r requirements.txt
+.\env\Scripts\python.exe manage.py migrate
+.\env\Scripts\python.exe manage.py setup_editor
+.\env\Scripts\python.exe manage.py createsuperuser
+.\env\Scripts\python.exe manage.py runserver
+```
+
+Perintah `setup_editor` menyiapkan grup Editor dengan izin mengubah Awards dan Experience, serta mempertahankan permission yang sudah ada. Akun yang ingin dijadikan Editor dimasukkan ke grup tersebut melalui Django Admin di `/admin/`. Pengguna biasa memakai akun tanpa grup Editor, sedangkan pemilik portofolio memakai akun superuser.
+
+### Tugas 1
 
 #### Pertanyaan Reflektif
 
@@ -452,3 +474,103 @@ Pemeriksaan dengan bantuan AI menghasilkan 36 test Django yang lolos. Namun, has
 Link percakapan Gemini yang saya gunakan untuk mempelajari konteks materi Tugas 5:
 
 `https://share.gemini.google/nden4wb9yjSw`
+
+
+### Tugas 6
+
+#### Pertanyaan Reflektif
+
+1. **Jelaskan apa yang dimaksud dengan REST dan mengapa mengembalikan JSON saja belum cukup untuk menyebut sebuah API sebagai RESTful! Jelaskan pula perbedaan PUT dan PATCH beserta contoh kapan masing-masing sebaiknya digunakan!**
+
+    REST atau Representational State Transfer adalah gaya arsitektur untuk merancang komunikasi antara client dan server. Dalam pendekatan ini, data dipandang sebagai resource yang memiliki alamat, lalu client berinteraksi melalui antarmuka yang konsisten. Pada proyek saya, kumpulan penghargaan diakses melalui `/api/v1/awards/`, sedangkan satu penghargaan diakses melalui `/api/v1/awards/<uuid>/`.
+
+    JSON hanya menentukan format representasi data yang dikirim. Sebuah endpoint bisa mengembalikan JSON tetapi tetap memakai `GET` untuk menghapus data, sehingga format JSON saja belum membuktikan desain API-nya sesuai REST. REST juga mencakup pemisahan client-server, komunikasi stateless, aturan cache, antarmuka seragam, dan sistem berlapis. Sebagai contoh, request `GET` pada API saya hanya membaca data, sedangkan penghapusan memakai `DELETE`.
+
+    Saya juga perlu membedakan praktik dalam tutorial dengan REST secara ketat. API proyek ini memakai `SessionAuthentication`, yang menggunakan session Django di server, dan endpoint `/star/` untuk aksi toggle Like. Jadi, saya menerapkan pola resource dan HTTP method yang diajarkan, tetapi tidak mengklaim bahwa penggunaan DRF dan JSON otomatis memenuhi seluruh batasan REST.
+
+    `PUT` digunakan untuk mengirim representasi pengganti resource, sedangkan `PATCH` digunakan untuk perubahan sebagian. Misalnya, ketika hanya ingin mengganti nama penghargaan, saya mengirim `PATCH` dengan isi `{"title": "Juara Utama Web Design"}`. Field seperti `issuer` dan `year` tetap mempertahankan nilainya. Karena itu, modal edit Awards mengirim `PATCH` melalui fungsi `saveAward()`.
+
+    Jika saya ingin mengirim ulang keseluruhan data penghargaan, saya dapat memakai `PUT` dengan field wajib `title`, `issuer`, dan `year`, serta nilai URL yang ingin disimpan. Pada `award_detail`, argumen `partial=request.method == "PATCH"` membuat field wajib boleh tidak dikirim saat PATCH. Sebaliknya, PUT yang hanya membawa judul akan ditolak karena field wajib lainnya belum ada. Field opsional yang tidak dikirim pada implementasi DRF ini tidak otomatis dikosongkan; jika ingin menghapus URL sertifikat, saya perlu mengirim `"certificate_url": ""` secara eksplisit.
+
+2. **Jelaskan peran serializer pada Django REST Framework! Apa keuntungannya dibandingkan merakit dictionary secara manual dengan JsonResponse seperti pada Tutorial 05?**
+
+    Serializer berperan untuk membentuk representasi data sekaligus memvalidasi input yang diterima API. Pada proyek ini, `AwardSerializer` merupakan `ModelSerializer` yang mengacu pada model `Award`. Ketika membaca data, serializer membentuk data Python sederhana melalui `.data`, kemudian `Response` dan renderer DRF mengubahnya menjadi respons JSON atau Browsable API sesuai permintaan client.
+
+    Pada Tutorial 05, `get_awards_json` merakit dictionary secara manual untuk setiap penghargaan, sedangkan request tambah diproses menggunakan `AwardForm`. Setelah memakai DRF, daftar field API, representasi Like, dan validasi input API dapat dilihat bersama pada serializer. Field yang diekspos ditulis eksplisit, yaitu `id`, `title`, `issuer`, `year`, `thumbnail`, `certificate_url`, `like_count`, dan `is_liked`. Data akun seperti email dan password hash tidak ikut dikirim.
+
+    Saat menerima input, API membuat serializer dengan `data=request.data`, kemudian menjalankan `.is_valid(raise_exception=True)`. Jika validasi gagal, DRF mengembalikan `400` beserta pesan per field. Jika valid, `.save()` membuat objek baru atau memperbarui instance yang diberikan. Method `validate_title` dan `validate_issuer` membersihkan tag HTML menggunakan `strip_tags` serta menolak teks yang menjadi kosong. Aturan ini perlu ditulis pada serializer karena API tidak otomatis memanggil `AwardForm.clean_title`.
+
+    `like_count` dan `is_liked` memakai `SerializerMethodField`, sehingga nilainya dihitung server dan bersifat read-only. Jika client mengirim jumlah Like palsu, nilai tersebut diabaikan dan tidak mengubah relasi `liked_by`. Informasi `request` dibawa melalui `context` agar status Like sesuai dengan akun yang sedang membuka halaman. Meski input dibersihkan, JavaScript tetap memakai `escapeHtml` dan pemeriksaan URL saat menampilkan data.
+
+3. **Jelaskan perbedaan autentikasi dan otorisasi pada Django REST Framework! Mengapa hak akses harus diperiksa dengan permission class di server, bukan hanya dengan menyembunyikan tombol di template?**
+
+    Autentikasi digunakan untuk mengenali siapa pengirim request, sedangkan otorisasi digunakan untuk memutuskan tindakan yang boleh dilakukan oleh akun tersebut. Pada API Awards, `SessionAuthentication` mengenali session Django dan menyediakan `request.user`. Setelah itu, permission class memeriksa apakah method yang diminta boleh dijalankan. Jadi, berhasil login belum berarti pengguna boleh menambah atau menghapus penghargaan.
+
+    Pada proyek saya, pengunjung dapat membaca daftar dan detail. Pengguna biasa dapat memberikan atau membatalkan Like. Editor memiliki hak pengguna biasa dan dapat mengubah data melalui PUT/PATCH jika memiliki permission `main.change_award`. Superuser merupakan pemilik portofolio yang juga boleh menambah dan menghapus data. Endpoint daftar dan detail memakai `IsPortfolioOwnerOrEditorOrReadOnly`, sedangkan endpoint Like memakai `IsAuthenticated` dan selalu mengambil pemberinya dari `request.user`.
+
+    Menyembunyikan tombol hanya mengatur tampilan. Pengguna tetap bisa menyusun request sendiri melalui Console browser atau aplikasi HTTP tanpa menekan tombol tersebut. Jika pembatasan hanya berada pada template, request itu masih dapat mengubah database. Karena itu, server memeriksa permission sebelum menjalankan isi API view. Dalam konfigurasi SessionAuthentication ini, request tulis yang tidak diizinkan menghasilkan `403`, lalu JavaScript menampilkan pesan melalui toast. Test juga memeriksa bahwa data tetap sama setelah penolakan, bukan hanya memeriksa kode statusnya.
+
+4. **Jelaskan mengapa permintaan yang mengubah data tetap memerlukan token CSRF ketika API memakai SessionAuthentication! Mengapa test yang memakai force_authenticate tidak cukup untuk membuktikan bahwa perlindungan CSRF berjalan?**
+
+    SessionAuthentication menggunakan cookie session untuk mengenali pengguna. Browser dapat menyertakan cookie tersebut secara otomatis, sehingga aplikasi tetap membutuhkan perlindungan terhadap request yang dipicu dari situs lain dengan memanfaatkan session pengguna. CSRF membantu memastikan request perubahan data membawa token yang sesuai, bukan hanya cookie login. Karena itu, request POST, PUT, PATCH, dan DELETE dari akun yang terautentikasi melalui session harus membawa token CSRF yang valid.
+
+    Pada halaman Awards, `writeAward()` menyertakan header `X-CSRFToken` yang dibaca dari cookie melalui `getCookie('csrftoken')`. Saya juga menyertakan `{% csrf_token %}` di luar modal agar cookie CSRF tetap disiapkan untuk pengguna biasa yang tidak memiliki form tambah. Tanpa bagian tersebut, pengguna yang masih login tetapi tidak memiliki cookie CSRF bisa gagal memberi Like. Perlindungan ini tetap dipertahankan; error CSRF tidak diselesaikan dengan menambahkan `csrf_exempt`.
+
+    `force_authenticate` cocok untuk menguji hak akses karena langsung membuat request dianggap berasal dari pengguna tertentu. Namun, cara ini melewati autentikasi session yang sebenarnya. APIClient juga tidak menerapkan pemeriksaan CSRF secara default. Oleh karena itu, test permission yang lulus belum membuktikan CSRF berjalan. Saya menggunakan `APIClient(enforce_csrf_checks=True)` dan `.login()`, kemudian membuktikan bahwa request tanpa token menghasilkan `403` dan database tidak berubah. Test lainnya mengambil token dari halaman Awards, lalu membuktikan operasi yang diizinkan berhasil ketika header tersebut dikirim.
+
+## Harap dibaca (Tugas 6)
+
+Pada Tutorial 07, saya membangun API DRF untuk Projects. Pada Tugas 6, saya menerapkan pola yang sama pada **Awards dan Experience** untuk menampilkan, mencari, menambah, mengubah, menghapus, serta memberikan Like/Star tanpa reload halaman. Awards tetap memakai relasi `liked_by` dari tugas sebelumnya, sedangkan Experience memakai relasi `starred_by`. Modal tambah digunakan kembali untuk edit, dan pilihan thumbnail Link/Upload pada Experience tetap tersedia.
+
+Sebagai tambahan, Awards memiliki filter tahun, pengurutan, dan **Galeri Sertifikat** untuk melihat gambar atau PDF. Navigasi Sebelumnya/Berikutnya pada galeri mengikuti hasil pencarian dan filter yang aktif. Experience tetap menggunakan pencarian dan filter kategori tanpa galeri.
+
+## DOKUMENTASI AI Tugas 6
+
+### AI Disclosure
+
+Dalam mengerjakan Tugas 6, saya menggunakan Google Gemini Flash 3.6 dan ChatGPT/Codex sebagai alat bantu belajar dan pengembangan. Gemini saya gunakan untuk membantu menjelaskan dan memahami konsep dalam materi Tutorial 07 dan Tugas 6. Sementara itu, Codex yang terhubung dengan proyek di VS Code membantu membaca file kode lokal secara langsung, menelusuri hubungan antarfile, dan menjelaskan alur implementasinya.
+
+Bagian yang dibantu Codex meliputi penulisan dan penyesuaian serializer, permission, API view, URL, JavaScript Awards dan Experience, test otomatis, serta penyusunan jawaban reflektif. Saya memberikan materi dan instruksi tugas, lalu menggunakan prompt lanjutan untuk meminta penjelasan, memeriksa kesesuaian dengan tugas, dan menyederhanakan perubahan yang terlalu luas agar tetap mengikuti pola tutorial serta mempertahankan fitur lama.
+
+### Contoh Prompt yang Saya Gunakan
+
+Berikut cuplikan prompt asli dari sesi pengerjaan ini:
+
+1. > Aku cukup bingung dengan pengerjaan pada tutorial 7 kemarin, coba bantu aku mengimmplementasikan dan berikan langkah langkah untuk tugas 6 nanti
+
+2. > Berani konsepnya kita refaktor kan? cuman aku bingung aja kelebihan dari penggunaan ini apa?, dan juga kenapa harus sampai migration
+
+3. > coba langsung kamu yang implementasi langsung, biar aku bisa lihat perubahannya dimana tapi tetap jelaskan ke aku agar aku mengerti flow tugasnya ngapain
+
+4. > Aku cukup bingung di beberapa konsep, karena pada rest ini banyak menghubungkan API. Coba kamu tandai blok kodenya dan jelaskan ke aku secara rinci agar aku cukup paham, karena next project akan menggunakan flutter dengan api yang sama.
+
+5. > Kamu sudah implementasikan semua sesuai Checklist dan Rubrik? Coba audit dah periksa kembali.
+
+6. > Pada bagian awards, coba cek kembali karena aku sempat ada error saat implementasi api
+
+7. > Coba bantu aku untuk melakukan crosscheck ulang dari implementasiku pada tugas kali ini, sesuaikan dengan rubrik dan ikuti penilaian checklist yang diminta. Berikan informasi agar aku bisa mengecek juga dan memastikan kebenaran dari cehck yang kamu lakukan
+
+
+### Verifikasi dan Debugging
+
+Saya memeriksa alur API dengan bantuan Codex, termasuk validasi input, hak akses empat peran, Like/Star, upload thumbnail Experience, dan CSRF melalui login session. Pemeriksaan menggunakan `python manage.py check`, `python manage.py test main`, serta `python manage.py makemigrations --check --dry-run`. Hasilnya, 91 test lulus, konfigurasi Django tidak bermasalah, dan tidak ada perubahan model yang belum memiliki migration.
+
+### Refleksi Penggunaan AI
+
+AI terkadang memberikan solusi yang lebih rumit dari kebutuhan tugas. Saya meminta penyederhanaan agar perubahan tetap mengikuti Tutorial 07, misalnya memakai `prefetch_related` dan `SerializerMethodField` untuk informasi Like. Pemeriksaan Editor juga disesuaikan dengan Django Permission yang sudah digunakan proyek, sehingga API dan view lama memiliki aturan yang sama. Pemeriksaan dengan bantuan Codex juga menunjukkan bahwa grup Editor pada database lokal belum memiliki permission Awards dan Experience. Saya melengkapi langkah setup dengan `setup_editor` agar izin tersebut tersedia saat proyek dijalankan. Dari proses ini, saya belajar untuk membandingkan saran AI dengan materi, kode sebelumnya, dan kondisi database sebelum menerapkannya.
+
+Saya juga perlu memberi arahan yang spesifik mengenai fitur dan dokumentasi. Contohnya, galeri hanya digunakan pada Awards karena kurang sesuai untuk Experience, dan isi README dibatasi pada penjelasan yang relevan. Hasil test backend serta simulasi JavaScript membantu memvalidasi logika, tetapi belum memastikan seluruh tampilan dan interaksi di browser sudah benar. Karena itu, hasil AI tetap perlu diperiksa dan tidak cukup dinilai hanya dari test yang lulus.
+
+### Link Percakapan AI Tugas 6
+
+Link percakapan AI yang saya gunakan untuk mempelajari materi dan mengerjakan Tugas 6:
+
+`https://share.gemini.google/UqCBHuvAHDZN`
+
+### Sumber Penjelasan
+
+- [Tutorial 07](https://pbp.cs.ui.ac.id/tutorial/tutorial-7.html)
+- [Tugas 6](https://pbp.cs.ui.ac.id/assignments/individual/tugas-6.html)
+- [DRF Serializers](https://www.django-rest-framework.org/api-guide/serializers/) dan [SerializerMethodField](https://www.django-rest-framework.org/api-guide/fields/#serializermethodfield)
+- [DRF Authentication](https://www.django-rest-framework.org/api-guide/authentication/) dan [Permissions](https://www.django-rest-framework.org/api-guide/permissions/)
+- [DRF Testing: CSRF Validation](https://www.django-rest-framework.org/api-guide/testing/#csrf-validation)

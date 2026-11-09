@@ -31,7 +31,6 @@
         </form>
         <div class="project-header award-results-bar">
             <p id="award-results" role="status" aria-live="polite"></p>
-            <button type="button" id="share-awards" class="button button-secondary">Salin tautan hasil</button>
         </div>
         <div id="loading" class="empty-state hide" role="status"><p>Memuat data...</p></div>
         <div id="error" class="empty-state hide" role="alert"><p>Gagal memuat data. Silakan coba lagi.</p><button type="button" id="retry-awards" class="button">Coba lagi</button></div>
@@ -39,6 +38,7 @@
         <div id="grid" class="awards-grid hide"></div>
     </div></section>
 </main>
+{% include 'components/award_gallery_modal.html' %}
 {% if user.is_superuser or perms.main.change_award %}
     {% include 'components/award_form_modal.html' %}
 {% endif %}
@@ -67,6 +67,19 @@
     const resultsSummary = document.getElementById('award-results');
     const awardForm = document.getElementById('award-form');
     const awardModal = document.getElementById('add-award-modal');
+    const gallery = document.getElementById('award-gallery');
+    const galleryImage = document.getElementById('award-gallery-image');
+    const galleryPdf = document.getElementById('award-gallery-pdf');
+    const galleryMessage = document.getElementById('award-gallery-message');
+    const galleryOriginal = document.getElementById('award-gallery-original');
+    const galleryPrevious = document.getElementById('award-gallery-previous');
+    const galleryNext = document.getElementById('award-gallery-next');
+    const galleryImageButton = document.getElementById('award-gallery-show-image');
+    const galleryPdfButton = document.getElementById('award-gallery-show-pdf');
+    let galleryAwards = [];
+    let galleryIndex = -1;
+    let galleryOpenerId = null;
+    let galleryMode = 'image';
     let awardAbortController;
     let searchDebounceTimer;
     let editingAwardId = null;
@@ -152,15 +165,96 @@
         const certificate = safeUrl(award.certificate_url);
         const imageHtml = thumbnail
             ? `<img src="${escapeHtml(thumbnail)}" alt="Sertifikat ${escapeHtml(award.title)}">` : '';
-        const previewHtml = certificate
-            ? `<a class="award-preview" href="${escapeHtml(certificate)}" target="_blank" rel="noopener noreferrer">${imageHtml}<span class="award-file-label">Open PDF</span></a>`
-            : `<div class="award-preview">${imageHtml}<span class="award-file-label">Award</span></div>`;
+        const previewLabel = certificate || thumbnail ? 'Lihat Sertifikat' : 'Lihat Detail';
+        const previewHtml = `<button type="button" class="award-preview" data-action="preview"
+            data-id="${escapeHtml(award.id)}" aria-haspopup="dialog" aria-controls="award-gallery"
+            aria-label="${previewLabel}: ${escapeHtml(award.title)}">
+            ${imageHtml}<span class="award-file-label">${previewLabel}</span></button>`;
         articleElement.innerHTML = `${previewHtml}
             <div class="award-body"><p class="award-year">${escapeHtml(award.year)}</p>
                 <h3>${escapeHtml(award.title)}</h3><p class="award-issuer">${escapeHtml(award.issuer)}</p>
                 ${buildActionsHtml(award)}
             </div>`;
         return articleElement;
+    }
+
+    function gallerySources(award) {
+        const certificate = safeUrl(award.certificate_url);
+        const thumbnail = safeUrl(award.thumbnail);
+        const path = certificate ? new URL(certificate).pathname.toLowerCase() : '';
+        return {
+            image: /\.(png|jpe?g|gif|webp|avif|svg)$/.test(path) ? certificate : thumbnail,
+            pdf: path.endsWith('.pdf') ? certificate : '',
+            original: certificate || thumbnail,
+        };
+    }
+
+    function showGalleryMedia(mode) {
+        const award = galleryAwards[galleryIndex];
+        if (!award) return;
+        const sources = gallerySources(award);
+        galleryMode = mode === 'pdf' && sources.pdf ? 'pdf' : sources.image ? 'image' : 'pdf';
+        galleryImage.hidden = true;
+        galleryPdf.hidden = true;
+        galleryMessage.hidden = true;
+        galleryImage.removeAttribute('src');
+        galleryPdf.removeAttribute('data');
+        galleryImageButton.setAttribute('aria-pressed', String(galleryMode === 'image'));
+        galleryPdfButton.setAttribute('aria-pressed', String(galleryMode === 'pdf'));
+        document.getElementById('award-gallery-pdf-hint').hidden = galleryMode !== 'pdf' || !sources.pdf;
+        if (galleryMode === 'image' && sources.image) {
+            galleryImage.alt = `Sertifikat ${award.title}`;
+            galleryImage.src = sources.image;
+            galleryImage.hidden = false;
+        } else if (sources.pdf) {
+            // PDF baru dimuat ketika dipilih; menutup galeri melepas berkas dari object.
+            galleryPdf.title = `Sertifikat ${award.title}`;
+            galleryPdf.data = sources.pdf;
+            galleryPdf.hidden = false;
+        } else {
+            galleryMessage.textContent = sources.original
+                ? 'Pratinjau belum tersedia untuk tautan ini. Pilih Buka Berkas Asli.'
+                : 'Belum ada gambar atau berkas sertifikat untuk penghargaan ini.';
+            galleryMessage.hidden = false;
+        }
+    }
+
+    function renderAwardGallery(index) {
+        if (index < 0 || index >= galleryAwards.length) return;
+        galleryIndex = index;
+        const award = galleryAwards[index];
+        const sources = gallerySources(award);
+        // Detail memakai textContent agar teks dari API tidak diperlakukan sebagai HTML.
+        document.getElementById('award-gallery-title').textContent = award.title;
+        document.getElementById('award-gallery-byline').textContent = award.issuer;
+        document.getElementById('award-gallery-year').textContent = award.year;
+        document.getElementById('award-gallery-counter').textContent = `${index + 1} dari ${galleryAwards.length}`;
+        galleryPrevious.disabled = index === 0;
+        galleryNext.disabled = index === galleryAwards.length - 1;
+        galleryOriginal.hidden = !sources.original;
+        if (sources.original) galleryOriginal.href = sources.original;
+        else galleryOriginal.removeAttribute('href');
+        document.getElementById('award-gallery-modes').hidden = !(sources.image && sources.pdf);
+        showGalleryMedia(galleryMode);
+    }
+
+    function openAwardGallery(id) {
+        const index = galleryAwards.findIndex(award => award.id === id);
+        if (index < 0) return;
+        galleryOpenerId = id;
+        galleryMode = 'image';
+        renderAwardGallery(index);
+        // Dialog native menangani fokus keyboard serta penutupan dengan Escape.
+        gallery.showModal();
+    }
+
+    function updateGalleryAwards(awards) {
+        const selectedId = galleryAwards[galleryIndex]?.id;
+        galleryAwards = awards;
+        if (!gallery.open) return;
+        const index = awards.findIndex(award => award.id === selectedId);
+        if (index < 0) gallery.close();
+        else renderAwardGallery(index);
     }
 
     function updateLikeButton(award) {
@@ -274,6 +368,8 @@
             if (revision !== likeRevision) return fetchAward();
             // API DRF mengirim array langsung, tidak lagi {awards: [...]}.
             gridContainer.replaceChildren(...awards.map(buildAwardCardElement));
+            // Navigasi galeri mengikuti pencarian, filter, dan urutan hasil API saat ini.
+            updateGalleryAwards(awards);
             resultsSummary.textContent = `${awards.length} penghargaan ditemukan`;
             displayPageSection({ showGrid: awards.length > 0, showEmpty: awards.length === 0 });
             updatePageUrl(params);
@@ -289,6 +385,10 @@
         const button = event.target.closest('button[data-action]');
         if (!button || button.disabled) return;
         const action = button.dataset.action;
+        if (action === 'preview') {
+            openAwardGallery(button.dataset.id);
+            return;
+        }
         if (action === 'like' && pendingLikes.has(button.dataset.id)) return;
         if (action === 'delete' && !window.confirm('Hapus penghargaan ini?')) return;
         if (action === 'like') pendingLikes.add(button.dataset.id);
@@ -350,15 +450,32 @@
         fetchAward();
     });
     document.getElementById('retry-awards').addEventListener('click', () => fetchAward());
-    document.getElementById('share-awards').addEventListener('click', async function() {
-        if (!searchForm.reportValidity()) return;
-        const url = updatePageUrl(awardSearchParams());
-        try {
-            await navigator.clipboard.writeText(url.href);
-            showToast('Berhasil', 'Tautan hasil pencarian disalin.', 'success');
-        } catch (error) {
-            showToast('Tautan pencarian', 'Salin alamat pada bilah URL browser untuk membagikan hasil ini.', 'normal');
-        }
+    document.getElementById('award-gallery-close').addEventListener('click', () => gallery.close());
+    galleryPrevious.addEventListener('click', () => renderAwardGallery(galleryIndex - 1));
+    galleryNext.addEventListener('click', () => renderAwardGallery(galleryIndex + 1));
+    galleryImageButton.addEventListener('click', () => showGalleryMedia('image'));
+    galleryPdfButton.addEventListener('click', () => showGalleryMedia('pdf'));
+    galleryImage.addEventListener('error', function() {
+        galleryImage.hidden = true;
+        galleryMessage.textContent = 'Gambar tidak dapat dimuat. Coba pratinjau PDF atau buka berkas asli jika tersedia.';
+        galleryMessage.hidden = false;
+    });
+    gallery.addEventListener('keydown', function(event) {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        renderAwardGallery(galleryIndex + (event.key === 'ArrowRight' ? 1 : -1));
+    });
+    gallery.addEventListener('click', function(event) {
+        if (event.target !== gallery) return;
+        const bounds = gallery.getBoundingClientRect();
+        if (event.clientX < bounds.left || event.clientX > bounds.right ||
+            event.clientY < bounds.top || event.clientY > bounds.bottom) gallery.close();
+    });
+    gallery.addEventListener('close', function() {
+        galleryImage.removeAttribute('src');
+        galleryPdf.removeAttribute('data');
+        galleryIndex = -1;
+        gridContainer.querySelector(`button[data-action="preview"][data-id="${galleryOpenerId}"]`)?.focus();
     });
     window.addEventListener('popstate', function() {
         clearTimeout(searchDebounceTimer);

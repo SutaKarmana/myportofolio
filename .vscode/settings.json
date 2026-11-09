@@ -1,4 +1,5 @@
 {
     "python-envs.defaultEnvManager": "ms-python.python:system",
-    "python.defaultInterpreterPath": "${workspaceFolder}\\env\\Scripts\\python.exe"
+    "python.defaultInterpreterPath": "${workspaceFolder}\\env\\Scripts\\python.exe",
+    "python.terminal.useEnvFile": true
 }

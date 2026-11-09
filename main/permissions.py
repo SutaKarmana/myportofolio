@@ -1,5 +1,4 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
-    
 
 class IsPortfolioOwnerOrReadOnly(BasePermission):
     message = "Only the portfolio owner can change projects."
@@ -11,6 +10,10 @@ class IsPortfolioOwnerOrReadOnly(BasePermission):
         )
 
 class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
+    """Hak akses Awards mengikuti permission model yang juga dipakai view HTML."""
+
+    message = "Hanya pemilik dapat menambah/menghapus; Editor dapat mengubah penghargaan."
+
     def has_permission(self, request, view):
         if request.method in SAFE_METHODS:
             return True
@@ -20,5 +23,5 @@ class IsPortfolioOwnerOrEditorOrReadOnly(BasePermission):
             return True
         return (
             request.method in ("PUT", "PATCH")
-            and request.user.groups.filter(name="Editor").exists()
+            and request.user.has_perm("main.change_award")
         )

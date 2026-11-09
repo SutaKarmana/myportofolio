@@ -1,16 +1,58 @@
 import uuid
 import base64
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from django.contrib.auth.models import Group, Permission, User
 from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.management import call_command
 from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from main.models import Award, Experience, Project
+
+
+class EditorSetupAPITest(APITestCase):
+    def test_setup_creates_editor_with_only_section_edit_permissions(self):
+        call_command("setup_editor", stdout=StringIO())
+        group = Group.objects.get(name="Editor")
+        self.assertEqual(set(group.permissions.values_list("codename", flat=True)), {
+            "change_award", "change_experience",
+        })
+        self.assertFalse(group.user_set.exists())
+
+    def test_setup_can_be_repeated_without_removing_existing_permissions_or_members(self):
+        group = Group.objects.create(name="Editor")
+        group.permissions.add(Permission.objects.get(codename="change_project"))
+        user = User.objects.create_user("existing-editor", password="test-password")
+        user.groups.add(group)
+        for _ in range(2):
+            call_command("setup_editor", stdout=StringIO())
+        self.assertEqual(set(group.permissions.values_list("codename", flat=True)), {
+            "change_project", "change_award", "change_experience",
+        })
+        self.assertEqual(list(group.user_set.all()), [user])
+
+    def test_configured_editor_can_edit_both_sections_but_cannot_create_or_delete(self):
+        user = User.objects.create_user("configured-editor", password="test-password")
+        group = Group.objects.create(name="Editor")
+        user.groups.add(group)
+        award = Award.objects.create(title="Original Award", issuer="UI", year=2026)
+        experience = Experience.objects.create(title="Original Experience", description="Work")
+        call_command("setup_editor", stdout=StringIO())
+        self.client.force_authenticate(user=user)
+        for section, obj in [("award", award), ("experience", experience)]:
+            with self.subTest(section=section):
+                detail = reverse(f"api:{section}-detail", args=[obj.pk])
+                self.assertEqual(self.client.patch(detail, {"title": "Edited"}, format="json").status_code, 200)
+                self.assertEqual(self.client.post(reverse(f"api:{section}-list"), {}, format="json").status_code, 403)
+                self.assertEqual(self.client.delete(detail).status_code, 403)
+                obj.refresh_from_db()
+                self.assertEqual(obj.title, "Edited")
+                self.assertEqual(type(obj).objects.count(), 1)
 
 
 class ProjectAPITest(APITestCase):
